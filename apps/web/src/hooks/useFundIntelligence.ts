@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimeTable } from '@/hooks/useRealtimeSubscription';
@@ -131,6 +131,7 @@ export interface ProductFitAnalysis {
 // ─── Hooks ───────────────────────────────────────────────────────────
 
 export function useIntelligenceRuns(clientId?: string, forcePolling?: boolean) {
+  const supabase = useSupabase();
   const query = useQuery({
     queryKey: ['fund-intelligence-runs', clientId],
     enabled: !!clientId,
@@ -155,6 +156,7 @@ export function useIntelligenceRuns(clientId?: string, forcePolling?: boolean) {
 }
 
 export function useRunSteps(runId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['intelligence-run-steps', runId],
     enabled: !!runId,
@@ -171,6 +173,7 @@ export function useRunSteps(runId?: string) {
 }
 
 export function useLatestIntelligenceResult(clientId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['fund-intelligence-latest', clientId],
     enabled: !!clientId,
@@ -213,6 +216,7 @@ export function useLatestIntelligenceResult(clientId?: string) {
 }
 
 export function useIntelligenceSummary(clientId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['intelligence-summary', clientId],
     enabled: !!clientId,
@@ -229,6 +233,7 @@ export function useIntelligenceSummary(clientId?: string) {
 }
 
 export function useProductFitAnalyses(clientId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['product-fit-analyses', clientId],
     enabled: !!clientId,
@@ -246,6 +251,7 @@ export function useProductFitAnalyses(clientId?: string) {
 }
 
 export function useAllIntelligenceRuns() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['fund-intelligence-all-runs'],
     queryFn: async () => {
@@ -261,6 +267,7 @@ export function useAllIntelligenceRuns() {
 }
 
 export function useAccountsWithoutIntelligence() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['accounts-without-intelligence'],
     queryFn: async () => {
@@ -275,6 +282,7 @@ export function useAccountsWithoutIntelligence() {
 }
 
 export function useGenerateIntelligence() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -304,6 +312,7 @@ export function useGenerateIntelligence() {
 }
 
 export function useCheckSECFreshness() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -330,6 +339,7 @@ export function useCheckSECFreshness() {
 
 // Realtime subscription for run progress (replaces polling)
 export function useIntelligenceRunRealtime(runId?: string) {
+  const supabase = useSupabase();
   const qc = useQueryClient();
 
   // Subscribe to realtime changes on intelligence_run_steps

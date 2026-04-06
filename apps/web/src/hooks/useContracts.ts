@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export interface Contract {
   id: string;
@@ -17,6 +17,7 @@ export interface Contract {
 }
 
 export function useContracts(clientId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['contracts', clientId || 'all'],
     enabled: !!clientId,
@@ -36,6 +37,7 @@ export function useContracts(clientId?: string) {
 }
 
 export function useUploadContract() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -97,6 +99,7 @@ export function useUploadContract() {
 }
 
 export function useDeleteContract() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, filePath }: { id: string; filePath: string }) => {

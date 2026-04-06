@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export function useDatasets() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['datasets'],
     queryFn: async () => {
@@ -13,6 +14,7 @@ export function useDatasets() {
 }
 
 export function useCreateDataset() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { name: string; description?: string; coverage?: string; update_frequency?: string; example_use_cases?: string }) => {
@@ -25,6 +27,7 @@ export function useCreateDataset() {
 }
 
 export function useUpdateDataset() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
@@ -37,6 +40,7 @@ export function useUpdateDataset() {
 }
 
 export function useCacheDatasetStats() {
+  const supabase = useSupabase();
   return useMutation({
     mutationFn: async ({ datasetId, stats }: { datasetId: string; stats: Record<string, any> }) => {
       const { error } = await supabase.from('datasets').update({

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 // ---------- Types ----------
@@ -35,6 +35,7 @@ export interface ContractAmendment {
 // ---------- Line Items ----------
 
 export function useContractLineItems(contractId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['contract_line_items', contractId],
     enabled: !!contractId,
@@ -50,6 +51,7 @@ export function useContractLineItems(contractId?: string) {
 }
 
 export function useCreateContractLineItem() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { contract_id: string; dataset_id?: string; description: string; quantity: number; unit_price: number; total_price: number; start_date?: string; end_date?: string }) => {
@@ -62,6 +64,7 @@ export function useCreateContractLineItem() {
 }
 
 export function useUpdateContractLineItem() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -74,6 +77,7 @@ export function useUpdateContractLineItem() {
 }
 
 export function useDeleteContractLineItem() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -87,6 +91,7 @@ export function useDeleteContractLineItem() {
 // ---------- Amendments ----------
 
 export function useContractAmendments(contractId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['contract_amendments', contractId],
     enabled: !!contractId,
@@ -102,6 +107,7 @@ export function useContractAmendments(contractId?: string) {
 }
 
 export function useCreateContractAmendment() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({

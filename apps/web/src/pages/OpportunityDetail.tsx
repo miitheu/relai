@@ -4,7 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import LoadingState from '@/components/LoadingState';
 import { useOpportunities, useUpdateOpportunity, useDeleteOpportunity, useNotes, useActivities, useContacts, useDeliveries, useDatasets } from '@/hooks/useCrmData';
 import { useProfiles } from '@/hooks/useProfiles';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, getStageColor, stageOrder, ICEBOX_STAGES } from '@/data/mockData';
 import { useCurrencyRerender } from '@/hooks/useCurrencyRerender';
@@ -44,6 +44,7 @@ const ballStatusOptions: { value: BallStatus; label: string }[] = [
 ];
 
 export default function OpportunityDetail() {
+  const supabase = useSupabase();
   useCurrencyRerender();
   const { id } = useParams();
   const navigate = useNavigate();

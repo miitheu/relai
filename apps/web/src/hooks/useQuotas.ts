@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Types matching the quotas migration schema
@@ -33,6 +33,7 @@ export interface QuotaFilters {
 }
 
 export function useQuotas(filters?: QuotaFilters) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['quotas', filters || 'all'],
     queryFn: async () => {
@@ -61,6 +62,7 @@ export function useQuotas(filters?: QuotaFilters) {
 }
 
 export function useQuota(id: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['quotas', id],
     enabled: !!id,
@@ -73,6 +75,7 @@ export function useQuota(id: string | undefined) {
 }
 
 export function useCreateQuota() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -86,6 +89,7 @@ export function useCreateQuota() {
 }
 
 export function useUpdateQuota() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -98,6 +102,7 @@ export function useUpdateQuota() {
 }
 
 export function useDeleteQuota() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -109,6 +114,7 @@ export function useDeleteQuota() {
 }
 
 export function useQuotaAttainment(quotaId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['quota_attainment', quotaId],
     enabled: !!quotaId,

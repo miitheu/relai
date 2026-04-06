@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export interface AdminUser {
   id: string;
@@ -16,6 +16,7 @@ export interface AdminUser {
 }
 
 export function useAdminUsers() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
@@ -56,6 +57,7 @@ export function useAdminUsers() {
 }
 
 export function useUpdateUserRole() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
@@ -70,6 +72,7 @@ export function useUpdateUserRole() {
 }
 
 export function useUpdateUserProfile() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, updates }: { userId: string; updates: Record<string, any> }) => {
@@ -84,6 +87,7 @@ export function useUpdateUserProfile() {
 }
 
 export function useCreateUser() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: { email: string; password: string; full_name: string; team?: string; role?: string }) => {
@@ -99,6 +103,7 @@ export function useCreateUser() {
 }
 
 export function useToggleUserStatus() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
@@ -114,6 +119,7 @@ export function useToggleUserStatus() {
 }
 
 export function useReassignOwnership() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ fromUserId, toUserId, types }: { fromUserId: string; toUserId: string; types: string[] }) => {

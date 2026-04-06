@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 // ---------- Types ----------
@@ -47,6 +47,7 @@ export interface ForecastFilters {
 // ---------- Queries ----------
 
 export function useForecastCategories() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['forecast_categories'],
     queryFn: async () => {
@@ -61,6 +62,7 @@ export function useForecastCategories() {
 }
 
 export function useForecasts(_filters?: ForecastFilters) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['forecasts'],
     queryFn: async () => {
@@ -77,6 +79,7 @@ export function useForecasts(_filters?: ForecastFilters) {
 // ---------- Mutations ----------
 
 export function useCreateForecast() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -96,6 +99,7 @@ export function useCreateForecast() {
 }
 
 export function useUpdateForecast() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -108,6 +112,7 @@ export function useUpdateForecast() {
 }
 
 export function useForecastSnapshots(periodStart?: string, periodEnd?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['forecast_snapshots', periodStart, periodEnd],
     enabled: !!periodStart && !!periodEnd,

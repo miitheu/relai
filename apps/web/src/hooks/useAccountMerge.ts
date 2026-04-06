@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useToast } from '@/hooks/use-toast';
 
 // ─── Cluster-based types ───────────────────────────────────────────
@@ -46,6 +46,7 @@ export interface MergeEvent {
 }
 
 export function useDetectDuplicates() {
+  const supabase = useSupabase();
   const { toast } = useToast();
 
   return useMutation({
@@ -70,6 +71,7 @@ export function useDetectDuplicates() {
 }
 
 export function useMergeAccounts() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -98,6 +100,7 @@ export function useMergeAccounts() {
 }
 
 export function useMergeHistory() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['merge-history'],
     queryFn: async () => {
@@ -113,6 +116,7 @@ export function useMergeHistory() {
 }
 
 export function useAccountLinkedCounts(clientId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['account-linked-counts', clientId],
     enabled: !!clientId,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useCreateClient } from '@/hooks/useCrmData';
 import { Compass, Loader2, Building2, Plus, CheckCircle2, ExternalLink, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ interface SimilarCompany {
 }
 
 export default function SimilarAccountsTab({ clientId, clientName, clientType }: {
+  const supabase = useSupabase();
   clientId: string;
   clientName: string;
   clientType: string;

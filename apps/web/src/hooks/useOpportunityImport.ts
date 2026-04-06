@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { normalizeCompanyName, calculateSimilarity } from '@/lib/companyMatching';
 
@@ -8,6 +8,7 @@ import { normalizeCompanyName, calculateSimilarity } from '@/lib/companyMatching
 // ============================================================
 
 export function useOppImportBatches() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['opp-import-batches'],
     queryFn: async () => {
@@ -22,6 +23,7 @@ export function useOppImportBatches() {
 }
 
 export function useOppImportBatch(batchId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['opp-import-batch', batchId],
     enabled: !!batchId,
@@ -38,6 +40,7 @@ export function useOppImportBatch(batchId: string | undefined) {
 }
 
 export function useCreateOppImportBatch() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -59,6 +62,7 @@ export function useCreateOppImportBatch() {
 // ============================================================
 
 export function useOppStagingRows(batchId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['opp-staging-rows', batchId],
     enabled: !!batchId,
@@ -75,6 +79,7 @@ export function useOppStagingRows(batchId: string | undefined) {
 }
 
 export function useInsertOppStagingRows() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (rows: any[]) => {
@@ -92,6 +97,7 @@ export function useInsertOppStagingRows() {
 }
 
 export function useUpdateOppStagingRow() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -168,6 +174,7 @@ export function normalizeStage(raw: string | null | undefined): { stage: string;
 // ============================================================
 
 export function useMatchOpportunities() {
+  const supabase = useSupabase();
   const { user } = useAuth();
   const qc = useQueryClient();
 
@@ -453,6 +460,7 @@ export function useMatchOpportunities() {
 // ============================================================
 
 export function useResolveOppRow() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
 
@@ -556,6 +564,7 @@ export function useResolveOppRow() {
 // ============================================================
 
 export function useImportOpportunities() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
 
@@ -661,6 +670,7 @@ export function useImportOpportunities() {
 // ============================================================
 
 export function useOppStagingStats(batchId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['opp-staging-stats', batchId],
     enabled: !!batchId,

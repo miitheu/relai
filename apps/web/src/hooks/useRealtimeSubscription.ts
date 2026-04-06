@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useQueryClient } from '@tanstack/react-query';
 
 /**
@@ -13,6 +13,7 @@ export function useRealtimeTable(
   queryKey: string[],
   filter?: { column: string; value: string },
 ) {
+  const supabase = useSupabase();
   const qc = useQueryClient();
 
   useEffect(() => {

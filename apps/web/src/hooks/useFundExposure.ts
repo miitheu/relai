@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export interface FundExposureRow {
   id: string;
@@ -20,6 +20,7 @@ export interface FundExposureRow {
 }
 
 export function useFundExposure(fundId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['fund-exposure', fundId],
     enabled: !!fundId,
@@ -50,6 +51,7 @@ export function useFundExposure(fundId: string | undefined) {
 }
 
 export function useFundReportedHoldings(fundId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['fund-reported-holdings', fundId],
     enabled: !!fundId,

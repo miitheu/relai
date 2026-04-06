@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface Invoice {
@@ -25,6 +25,7 @@ export interface Invoice {
 }
 
 export function useInvoices(clientId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['invoices', clientId || 'all'],
     enabled: !!clientId,
@@ -42,6 +43,7 @@ export function useInvoices(clientId?: string) {
 }
 
 export function useOverdueInvoices() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['invoices', 'overdue'],
     queryFn: async () => {
@@ -62,6 +64,7 @@ export function useOverdueInvoices() {
 }
 
 export function useUploadInvoice() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
 
@@ -135,6 +138,7 @@ export function useUploadInvoice() {
 }
 
 export function useUpdateInvoice() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -154,6 +158,7 @@ export function useUpdateInvoice() {
 }
 
 export function useMarkInvoicePaid() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -173,6 +178,7 @@ export function useMarkInvoicePaid() {
 }
 
 export function useDeleteInvoice() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, filePath }: { id: string; filePath?: string | null }) => {
@@ -189,6 +195,7 @@ export function useDeleteInvoice() {
 }
 
 export function useInvoiceDownloadUrl() {
+  const supabase = useSupabase();
   return async (filePath: string) => {
     const { data, error } = await supabase.storage
       .from('invoices')

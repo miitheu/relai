@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Building2, Database, TrendingUp, BarChart3, Users, Truck, RefreshCw, Home, FileText, Radar, User, Package, Shield, Sparkles } from 'lucide-react';
 import { useQuickCreate } from '@/contexts/QuickCreateContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 const routes = [
   { label: 'Home', path: '/', icon: Home },
@@ -30,6 +30,7 @@ interface SearchResult {
 }
 
 export default function CommandPalette() {
+  const supabase = useSupabase();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [liveResults, setLiveResults] = useState<SearchResult[]>([]);

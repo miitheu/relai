@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +34,7 @@ interface ImportResult {
 const PAGE_SIZE = 25;
 
 export default function SecImportTab() {
+  const supabase = useSupabase();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<EnrichedEntity[]>([]);

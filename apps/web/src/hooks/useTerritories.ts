@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Types matching the territories migration schema
@@ -26,6 +26,7 @@ export interface TerritoryAssignment {
 }
 
 export function useTerritories() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['territories'],
     queryFn: async () => {
@@ -37,6 +38,7 @@ export function useTerritories() {
 }
 
 export function useTerritory(id: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['territories', id],
     enabled: !!id,
@@ -49,6 +51,7 @@ export function useTerritory(id: string | undefined) {
 }
 
 export function useCreateTerritory() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -62,6 +65,7 @@ export function useCreateTerritory() {
 }
 
 export function useUpdateTerritory() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -74,6 +78,7 @@ export function useUpdateTerritory() {
 }
 
 export function useDeleteTerritory() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -85,6 +90,7 @@ export function useDeleteTerritory() {
 }
 
 export function useTerritoryAssignments(territoryId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['territory_assignments', territoryId || 'all'],
     queryFn: async () => {
@@ -98,6 +104,7 @@ export function useTerritoryAssignments(territoryId?: string) {
 }
 
 export function useAssignTerritory() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -114,6 +121,7 @@ export function useAssignTerritory() {
 }
 
 export function useUnassignTerritory() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEmails } from '@/hooks/useGmailIntegration';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Mail, ArrowDownLeft, ArrowUpRight, Lock, Eye, EyeOff,
@@ -16,6 +16,7 @@ interface Props {
 }
 
 export default function ClientEmails({ clientId }: Props) {
+  const supabase = useSupabase();
   const { data: emails = [], isLoading } = useEmails({ client_id: clientId });
   const { user } = useAuth();
   const qc = useQueryClient();

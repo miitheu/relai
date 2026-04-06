@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export interface CustomerHealthScore {
   id: string;
@@ -25,6 +25,7 @@ export interface CustomerHealthListItem {
 }
 
 export function useCustomerHealth(clientId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['customer-health', clientId],
     enabled: !!clientId,
@@ -46,6 +47,7 @@ export function useCustomerHealth(clientId: string | undefined) {
 }
 
 export function useCustomerHealthList() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['customer-health-list'],
     queryFn: async () => {

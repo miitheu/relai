@@ -9,13 +9,14 @@ import EmptyState from '@/components/EmptyState';
 import { useToast } from '@/hooks/use-toast';
 import { useAllEntityResolutions } from '@/hooks/useEntityResolution';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import BulkActionsBar from '@/components/BulkActionsBar';
 import FilterBuilder, { type FilterCondition } from '@/components/filters/FilterBuilder';
 
 export default function ClientList() {
+  const supabase = useSupabase();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();

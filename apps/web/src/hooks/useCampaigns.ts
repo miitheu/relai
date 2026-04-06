@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useCampaigns() {
+  const supabase = useSupabase();
   const { user } = useAuth();
   return useQuery({
     queryKey: ['campaigns', user?.id],
@@ -22,6 +23,7 @@ export function useCampaigns() {
 }
 
 export function useUserCampaignTargets() {
+  const supabase = useSupabase();
   const { user } = useAuth();
   return useQuery({
     queryKey: ['user-campaign-targets', user?.id],
@@ -51,6 +53,7 @@ export function useUserCampaignTargets() {
 }
 
 export function useCampaign(id?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['campaigns', id],
     enabled: !!id,
@@ -67,6 +70,7 @@ export function useCampaign(id?: string) {
 }
 
 export function useCampaignTargets(campaignId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['campaign_targets', campaignId],
     enabled: !!campaignId,
@@ -84,6 +88,7 @@ export function useCampaignTargets(campaignId?: string) {
 }
 
 export function useCreateCampaign() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -113,6 +118,7 @@ export function useCreateCampaign() {
 }
 
 export function useUpdateCampaign() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...values }: { id: string; [key: string]: any }) => {
@@ -133,6 +139,7 @@ export function useUpdateCampaign() {
 }
 
 export function useDeleteCampaign() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -144,6 +151,7 @@ export function useDeleteCampaign() {
 }
 
 export function useCreateCampaignTarget() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (values: {
@@ -181,6 +189,7 @@ export interface CampaignOverlap {
 }
 
 export function useCampaignOverlaps(campaignId?: string, productIds?: string[]) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['campaign-overlaps', campaignId, productIds],
     enabled: !!campaignId && !!productIds && productIds.length > 0,
@@ -231,6 +240,7 @@ export function useCampaignOverlaps(campaignId?: string, productIds?: string[]) 
 }
 
 export function useUpdateCampaignTarget() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, campaign_id, ...values }: { id: string; campaign_id: string; [key: string]: any }) => {

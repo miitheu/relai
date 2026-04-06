@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Upload } from 'lucide-react';
 
 export default function ImportsTab() {
+  const supabase = useSupabase();
   const { data: batches, isLoading } = useQuery({
     queryKey: ['admin-import-batches'],
     queryFn: async () => {

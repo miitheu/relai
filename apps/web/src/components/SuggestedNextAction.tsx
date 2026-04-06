@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { Lightbulb, RefreshCw, Copy, Check } from 'lucide-react';
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function SuggestedNextAction({ clientId, clientName, opportunities, deliveries, renewals, signals, contacts }: Props) {
+  const supabase = useSupabase();
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Zap, Loader2, CheckCircle2, AlertTriangle, Brain, BarChart3, RefreshCw } from 'lucide-react';
 import { useClients } from '@/hooks/useCrmData';
 import { useUpdateCampaign } from '@/hooks/useCampaigns';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { toast } from 'sonner';
 
 type Priority = 'high' | 'medium' | 'low' | 'off';
@@ -53,6 +53,7 @@ export default function CampaignScoringPanel({ campaign, targets, onComplete }: 
   targets: any[];
   onComplete?: () => void;
 }) {
+  const supabase = useSupabase();
   const { data: clients = [] } = useClients();
   const updateCampaign = useUpdateCampaign();
   const [scoringNew, setScoringNew] = useState(false);

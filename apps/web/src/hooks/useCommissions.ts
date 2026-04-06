@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 // ---------- Types ----------
@@ -49,6 +49,7 @@ export interface CommissionLedgerFilters {
 // ---------- Commission Plans ----------
 
 export function useCommissionPlans() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['commission_plans'],
     queryFn: async () => {
@@ -64,6 +65,7 @@ export function useCommissionPlans() {
 }
 
 export function useCommissionPlan(id: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['commission_plans', id],
     enabled: !!id,
@@ -79,6 +81,7 @@ export function useCommissionPlan(id: string | undefined) {
 }
 
 export function useCreateCommissionPlan() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -92,6 +95,7 @@ export function useCreateCommissionPlan() {
 }
 
 export function useUpdateCommissionPlan() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -106,6 +110,7 @@ export function useUpdateCommissionPlan() {
 // ---------- Commission Ledger ----------
 
 export function useCommissionLedger(filters?: CommissionLedgerFilters) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['commission_ledger', filters],
     queryFn: async () => {
@@ -125,6 +130,7 @@ export function useCommissionLedger(filters?: CommissionLedgerFilters) {
 }
 
 export function useCreateCommissionEntry() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { user_id: string; opportunity_id: string; plan_id?: string; base_amount: number; commission_amount: number; rate: number; period_start: string; period_end: string; notes?: string }) => {
@@ -137,6 +143,7 @@ export function useCreateCommissionEntry() {
 }
 
 export function useUpdateCommissionEntry() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {

@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export function useActivities(filters?: { client_id?: string; opportunity_id?: string }) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['activities', filters],
     queryFn: async () => {

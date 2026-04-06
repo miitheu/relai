@@ -3,7 +3,7 @@ import { X, ChevronDown, ChevronRight, Plus, Zap, Search } from 'lucide-react';
 import { useQuickCreate } from '@/contexts/QuickCreateContext';
 import { useClients, useDatasets, useCreateOpportunity, useCreateClient, useProfiles } from '@/hooks/useCrmData';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { stageOrder } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -99,6 +99,7 @@ function SearchableSelect({ value, onChange, options, placeholder, onCreateNew, 
 }
 
 export default function QuickCreateOpportunity() {
+  const supabase = useSupabase();
   const { isOpen, defaults, close } = useQuickCreate();
   const { user } = useAuth();
   const { toast } = useToast();

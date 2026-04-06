@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export function useWebEnrich() {
+  const supabase = useSupabase();
   const queryClient = useQueryClient();
   const [result, setResult] = useState<any>(null);
 
@@ -31,6 +32,7 @@ export function useWebEnrich() {
 }
 
 export function useEnrichmentResults(clientId: string | undefined, source?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['enrichment-results', clientId, source],
     queryFn: async () => {

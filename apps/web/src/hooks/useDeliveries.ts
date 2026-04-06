@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useDeliveries(filters?: { client_id?: string; opportunity_id?: string; delivery_type?: string }) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['deliveries', filters || 'all'],
     queryFn: async () => {
@@ -18,6 +19,7 @@ export function useDeliveries(filters?: { client_id?: string; opportunity_id?: s
 }
 
 export function useAllDeliveries() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['all_deliveries'],
     queryFn: async () => {
@@ -29,6 +31,7 @@ export function useAllDeliveries() {
 }
 
 export function useCreateDelivery() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -42,6 +45,7 @@ export function useCreateDelivery() {
 }
 
 export function useUpdateDelivery() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {

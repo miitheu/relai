@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useNotifications() {
+  const supabase = useSupabase();
   const { user } = useAuth();
   return useQuery({
     queryKey: ['notifications', user?.id],
@@ -22,6 +23,7 @@ export function useNotifications() {
 }
 
 export function useUnreadCount() {
+  const supabase = useSupabase();
   const { user } = useAuth();
   return useQuery({
     queryKey: ['notifications_unread', user?.id],
@@ -40,6 +42,7 @@ export function useUnreadCount() {
 }
 
 export function useMarkNotificationRead() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -54,6 +57,7 @@ export function useMarkNotificationRead() {
 }
 
 export function useMarkAllRead() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -69,6 +73,7 @@ export function useMarkAllRead() {
 }
 
 export function useDeleteNotification() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -83,6 +88,7 @@ export function useDeleteNotification() {
 }
 
 export function useClearAllNotifications() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({

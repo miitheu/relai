@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useOpportunities(filters?: { client_id?: string; dataset_id?: string; stage?: string }) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['opportunities', filters],
     queryFn: async () => {
@@ -18,6 +19,7 @@ export function useOpportunities(filters?: { client_id?: string; dataset_id?: st
 }
 
 export function useCreateOpportunity() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -32,6 +34,7 @@ export function useCreateOpportunity() {
 }
 
 export function useDeleteOpportunity() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -43,6 +46,7 @@ export function useDeleteOpportunity() {
 }
 
 export function useUpdateOpportunity() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {

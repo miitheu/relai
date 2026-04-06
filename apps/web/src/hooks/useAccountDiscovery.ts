@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export interface DiscoverySuggestion {
   id: string;
@@ -30,6 +30,7 @@ export interface DiscoverySuggestion {
 }
 
 export function useSavedDiscoveries() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['saved-discoveries'],
     queryFn: async () => {
@@ -54,6 +55,7 @@ export function useSavedDiscoveries() {
 }
 
 export function useDiscoveryByName(name?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['discovery-by-name', name],
     enabled: !!name,
@@ -73,6 +75,7 @@ export function useDiscoveryByName(name?: string) {
 }
 
 export function useDiscoverySuggestions(options?: { status?: string }) {
+  const supabase = useSupabase();
   const { data: { user: authUser } = {} } = supabase.auth.getSession() ? { data: { user: null } } : { data: { user: null } };
 
   return useQuery({
@@ -209,6 +212,7 @@ Return ONLY the JSON array, no markdown formatting or explanation.`;
 }
 
 export function useRunAccountDiscovery() {
+  const supabase = useSupabase();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -301,6 +305,7 @@ export function useRunAccountDiscovery() {
 }
 
 export function useImportSuggestion() {
+  const supabase = useSupabase();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -347,6 +352,7 @@ export function useImportSuggestion() {
 }
 
 export function useDismissSuggestion() {
+  const supabase = useSupabase();
   const queryClient = useQueryClient();
 
   return useMutation({

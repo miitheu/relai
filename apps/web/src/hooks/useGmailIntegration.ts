@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -13,6 +13,7 @@ export interface GmailConnection {
 }
 
 export function useGmailConnection() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['gmail-connection'],
     queryFn: async () => {
@@ -26,6 +27,7 @@ export function useGmailConnection() {
 }
 
 export function useConnectGmail() {
+  const supabase = useSupabase();
   const { toast } = useToast();
   return useMutation({
     mutationFn: async () => {
@@ -46,6 +48,7 @@ export function useConnectGmail() {
 }
 
 export function useExchangeGmailCode() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
@@ -67,6 +70,7 @@ export function useExchangeGmailCode() {
 }
 
 export function useDisconnectGmail() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
@@ -106,6 +110,7 @@ export interface SyncResult {
 }
 
 export function useSyncGmail() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
@@ -138,6 +143,7 @@ export function useSyncGmail() {
 }
 
 export function useEmails(filters?: { client_id?: string; opportunity_id?: string; contact_id?: string }) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['emails', filters],
     enabled: !!(filters?.client_id || filters?.opportunity_id || filters?.contact_id),
@@ -165,6 +171,7 @@ export function useEmails(filters?: { client_id?: string; opportunity_id?: strin
 }
 
 export function useUpdateEmailVisibility() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, visibility }: { id: string; visibility: 'public' | 'private' | 'summary_only' }) => {
@@ -176,6 +183,7 @@ export function useUpdateEmailVisibility() {
 }
 
 export function useBlockedDomains() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['gmail-blocked-domains'],
     queryFn: async () => {
@@ -191,6 +199,7 @@ export function useBlockedDomains() {
 }
 
 export function useUpdateBlockedDomains() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({

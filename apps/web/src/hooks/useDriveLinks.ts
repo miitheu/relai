@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface DriveLink {
@@ -14,6 +14,7 @@ export interface DriveLink {
 }
 
 export function useDriveLinks(filters?: { client_id?: string; opportunity_id?: string }) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['drive_links', filters],
     enabled: !!(filters?.client_id || filters?.opportunity_id),
@@ -29,6 +30,7 @@ export function useDriveLinks(filters?: { client_id?: string; opportunity_id?: s
 }
 
 export function useCreateDriveLink() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -45,6 +47,7 @@ export function useCreateDriveLink() {
 }
 
 export function useDeleteDriveLink() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {

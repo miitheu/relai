@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useResearchSignals(clientId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['research_signals', clientId || 'all'],
     queryFn: async () => {
@@ -16,6 +17,7 @@ export function useResearchSignals(clientId?: string) {
 }
 
 export function useCreateSignal() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface ApprovalProcess {
@@ -38,6 +38,7 @@ export interface ApprovalStep {
 }
 
 export function useApprovalProcesses() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['approval-processes'],
     queryFn: async () => {
@@ -53,6 +54,7 @@ export function useApprovalProcesses() {
 }
 
 export function useApprovalRequests(status?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['approval-requests', status || 'all'],
     queryFn: async () => {
@@ -70,6 +72,7 @@ export function useApprovalRequests(status?: string) {
 }
 
 export function useMyPendingApprovals() {
+  const supabase = useSupabase();
   const { user } = useAuth();
   return useQuery({
     queryKey: ['my-pending-approvals', user?.id],
@@ -89,6 +92,7 @@ export function useMyPendingApprovals() {
 }
 
 export function useCreateApprovalRequest() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -113,6 +117,7 @@ export function useCreateApprovalRequest() {
 }
 
 export function useApproveStep() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ stepId, comments }: { stepId: string; comments?: string }) => {
@@ -133,6 +138,7 @@ export function useApproveStep() {
 }
 
 export function useRejectStep() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ stepId, comments }: { stepId: string; comments?: string }) => {

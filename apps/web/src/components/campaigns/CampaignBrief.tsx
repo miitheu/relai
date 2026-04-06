@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Target, Package, MapPin, Users, Globe, BarChart3, MessageSquare, Loader2, Plus, X } from 'lucide-react';
 import { useUpdateCampaign } from '@/hooks/useCampaigns';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { toast } from 'sonner';
 
 const objectiveDescriptions: Record<string, string> = {
@@ -14,6 +14,7 @@ const objectiveDescriptions: Record<string, string> = {
 };
 
 export default function CampaignBrief({ campaign, datasets }: { campaign: any; datasets: any[] }) {
+  const supabase = useSupabase();
   const productNames = (campaign.target_product_ids || [])
     .map((id: string) => datasets.find((d: any) => d.id === id))
     .filter(Boolean);

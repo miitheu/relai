@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface EmailTemplate {
@@ -17,6 +17,7 @@ export interface EmailTemplate {
 }
 
 export function useEmailTemplates() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['email-templates'],
     queryFn: async () => {
@@ -32,6 +33,7 @@ export function useEmailTemplates() {
 }
 
 export function useEmailTemplate(id: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['email-templates', id],
     enabled: !!id,
@@ -48,6 +50,7 @@ export function useEmailTemplate(id: string | undefined) {
 }
 
 export function useCreateEmailTemplate() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -73,6 +76,7 @@ export function useCreateEmailTemplate() {
 }
 
 export function useUpdateEmailTemplate() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -90,6 +94,7 @@ export function useUpdateEmailTemplate() {
 }
 
 export function useDeleteEmailTemplate() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {

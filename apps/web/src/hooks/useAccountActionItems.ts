@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export interface AccountActionItem {
   id: string;
@@ -17,6 +17,7 @@ export interface AccountActionItem {
 }
 
 export function useAllAccountActionItems() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['account-action-items', 'all-pending'],
     queryFn: async () => {
@@ -32,6 +33,7 @@ export function useAllAccountActionItems() {
 }
 
 export function useAccountActionItems(clientId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['account-action-items', clientId],
     queryFn: async () => {
@@ -50,6 +52,7 @@ export function useAccountActionItems(clientId: string | undefined) {
 }
 
 export function useResolveActionItem() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -81,6 +84,7 @@ export function useResolveActionItem() {
 }
 
 export function useDismissActionItem() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {

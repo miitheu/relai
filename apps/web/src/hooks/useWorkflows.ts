@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface WorkflowRule {
@@ -35,6 +35,7 @@ export interface WorkflowExecutionLog {
 }
 
 export function useWorkflowRules() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['workflow-rules'],
     queryFn: async () => {
@@ -50,6 +51,7 @@ export function useWorkflowRules() {
 }
 
 export function useCreateWorkflowRule() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -74,6 +76,7 @@ export function useCreateWorkflowRule() {
 }
 
 export function useUpdateWorkflowRule() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -91,6 +94,7 @@ export function useUpdateWorkflowRule() {
 }
 
 export function useDeleteWorkflowRule() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -105,6 +109,7 @@ export function useDeleteWorkflowRule() {
 }
 
 export function useWorkflowActions(ruleId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['workflow-actions', ruleId],
     enabled: !!ruleId,
@@ -122,6 +127,7 @@ export function useWorkflowActions(ruleId: string | undefined) {
 }
 
 export function useCreateWorkflowAction() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
@@ -146,6 +152,7 @@ export function useCreateWorkflowAction() {
 }
 
 export function useWorkflowExecutionLog(ruleId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['workflow-execution-log', ruleId || 'all'],
     queryFn: async () => {

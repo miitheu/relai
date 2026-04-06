@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useClients() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
@@ -14,6 +15,7 @@ export function useClients() {
 }
 
 export function useClientsPaginated(page = 0, pageSize = 50) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['clients', 'paginated', page, pageSize],
     queryFn: async () => {
@@ -32,6 +34,7 @@ export function useClientsPaginated(page = 0, pageSize = 50) {
 }
 
 export function useClient(id: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['clients', id],
     enabled: !!id,
@@ -44,6 +47,7 @@ export function useClient(id: string | undefined) {
 }
 
 export function useCreateClient() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -57,6 +61,7 @@ export function useCreateClient() {
 }
 
 export function useUpdateClient() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 interface SearchResult {
   id: string;
@@ -11,6 +11,7 @@ interface SearchResult {
 }
 
 export function useSemanticSearch() {
+  const supabase = useSupabase();
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);

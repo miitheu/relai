@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useIntelligenceSummary, useProductFitAnalyses } from '@/hooks/useFundIntelligence';
 import { useContacts } from '@/hooks/useContacts';
 import { useDatasets } from '@/hooks/useDatasets';
@@ -19,6 +19,7 @@ export interface EmailDraft {
 }
 
 export function useOpportunityEmailDraft(opportunity: any) {
+  const supabase = useSupabase();
   const clientId = opportunity?.client_id;
   const { data: summary } = useIntelligenceSummary(clientId);
   const { data: productFits = [] } = useProductFitAnalyses(clientId);

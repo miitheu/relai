@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export interface OpportunityProduct {
   id: string;
@@ -12,6 +12,7 @@ export interface OpportunityProduct {
 }
 
 export function useOpportunityProducts(opportunityId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['opportunity-products', opportunityId],
     queryFn: async () => {
@@ -28,6 +29,7 @@ export function useOpportunityProducts(opportunityId?: string) {
 }
 
 export function useAddOpportunityProduct() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ opportunityId, datasetId, revenue, notes }: {
@@ -57,6 +59,7 @@ export function useAddOpportunityProduct() {
 }
 
 export function useUpdateOpportunityProduct() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, opportunityId, ...updates }: {
@@ -82,6 +85,7 @@ export function useUpdateOpportunityProduct() {
 }
 
 export function useRemoveOpportunityProduct() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, opportunityId }: { id: string; opportunityId: string }) => {

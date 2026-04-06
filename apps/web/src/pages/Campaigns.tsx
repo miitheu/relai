@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCampaigns, useCreateCampaign, useCreateCampaignTarget, useCampaignTargets } from '@/hooks/useCampaigns';
 import { useImportSuggestion } from '@/hooks/useAccountDiscovery';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useDatasets } from '@/hooks/useCrmData';
 import LoadingState from '@/components/LoadingState';
 import EmptyState from '@/components/EmptyState';
@@ -105,6 +105,7 @@ function CampaignRow({ campaign, onClick }: { campaign: any; onClick: () => void
 }
 
 export default function Campaigns() {
+  const supabase = useSupabase();
   const { data: campaigns = [], isLoading } = useCampaigns();
   const { data: datasets = [] } = useDatasets();
   const createCampaign = useCreateCampaign();

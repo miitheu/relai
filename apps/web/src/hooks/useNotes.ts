@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useNotes(filters?: { client_id?: string; opportunity_id?: string }) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['notes', filters],
     queryFn: async () => {
@@ -17,6 +18,7 @@ export function useNotes(filters?: { client_id?: string; opportunity_id?: string
 }
 
 export function useCreateNote() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 interface MeetingBrief {
   executive_summary: string;
@@ -24,6 +24,7 @@ interface MeetingPrepResult {
 }
 
 export function useMeetingPrep() {
+  const supabase = useSupabase();
   const [result, setResult] = useState<MeetingPrepResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

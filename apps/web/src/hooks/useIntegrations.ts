@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface Integration {
@@ -25,6 +25,7 @@ export interface SyncLogEntry {
 }
 
 export function useIntegrations() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['integrations'],
     queryFn: async () => {
@@ -40,6 +41,7 @@ export function useIntegrations() {
 }
 
 export function useCreateIntegration() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -62,6 +64,7 @@ export function useCreateIntegration() {
 }
 
 export function useUpdateIntegration() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -79,6 +82,7 @@ export function useUpdateIntegration() {
 }
 
 export function useSyncLog(integrationId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['sync-log', integrationId || 'all'],
     queryFn: async () => {

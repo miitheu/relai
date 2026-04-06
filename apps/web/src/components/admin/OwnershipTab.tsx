@@ -8,10 +8,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useQuery } from '@tanstack/react-query';
 
 export default function OwnershipTab() {
+  const supabase = useSupabase();
   const { data: users } = useAdminUsers();
   const [fromUser, setFromUser] = useState('');
   const [toUser, setToUser] = useState('');

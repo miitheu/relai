@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useToast } from '@/hooks/use-toast';
 import { Settings as SettingsIcon, User, KeyRound, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Settings() {
+  const supabase = useSupabase();
   const { profile } = useAuth();
   const { toast } = useToast();
 

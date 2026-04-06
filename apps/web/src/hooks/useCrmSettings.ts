@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { stageOrder } from '@/data/mockData';
 
 interface CrmSettingsMap {
@@ -7,6 +7,7 @@ interface CrmSettingsMap {
 }
 
 export function useCrmSettings() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['crm-settings'],
     queryFn: async () => {

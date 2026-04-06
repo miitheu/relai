@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   normalizeCompanyName,
@@ -15,6 +15,7 @@ import {
 // ============================================================
 
 export function useImportBatches() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['import-batches'],
     queryFn: async () => {
@@ -29,6 +30,7 @@ export function useImportBatches() {
 }
 
 export function useImportBatch(batchId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['import-batch', batchId],
     enabled: !!batchId,
@@ -45,6 +47,7 @@ export function useImportBatch(batchId: string | undefined) {
 }
 
 export function useCreateImportBatch() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   
@@ -63,6 +66,7 @@ export function useCreateImportBatch() {
 }
 
 export function useUpdateImportBatch() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   
   return useMutation({
@@ -88,6 +92,7 @@ export function useUpdateImportBatch() {
 // ============================================================
 
 export function useStagingRows(batchId: string | undefined, filters?: { resolution_status?: string }) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['staging-rows', batchId, filters],
     enabled: !!batchId,
@@ -110,6 +115,7 @@ export function useStagingRows(batchId: string | undefined, filters?: { resoluti
 }
 
 export function useInsertStagingRows() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   
   return useMutation({
@@ -130,6 +136,7 @@ export function useInsertStagingRows() {
 }
 
 export function useUpdateStagingRow() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   
   return useMutation({
@@ -150,6 +157,7 @@ export function useUpdateStagingRow() {
 }
 
 export function useBulkUpdateStagingRows() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   
   return useMutation({
@@ -172,6 +180,7 @@ export function useBulkUpdateStagingRows() {
 // ============================================================
 
 export function useMatchCompanies() {
+  const supabase = useSupabase();
   const { user } = useAuth();
   
   return useMutation({
@@ -325,6 +334,7 @@ export function useMatchCompanies() {
 // ============================================================
 
 export function useResolveCompany() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   
@@ -413,6 +423,7 @@ export function useResolveCompany() {
 }
 
 export function useImportContacts() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   
@@ -526,6 +537,7 @@ export function useImportContacts() {
 // ============================================================
 
 export function useStagingStats(batchId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['staging-stats', batchId],
     enabled: !!batchId,

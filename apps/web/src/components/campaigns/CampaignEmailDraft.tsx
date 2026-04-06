@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Mail, Loader2, Copy, Check, X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { toast } from 'sonner';
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function CampaignEmailDraft({ target, campaign, onClose }: Props) {
+  const supabase = useSupabase();
   const [loading, setLoading] = useState(false);
   const [emailDraft, setEmailDraft] = useState<{ subject: string; body: string } | null>(null);
   const [copied, setCopied] = useState(false);

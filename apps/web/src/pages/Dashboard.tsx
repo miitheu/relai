@@ -13,11 +13,12 @@ import ActionCenterPanel from '@/components/ActionCenterPanel';
 import { useAllIntelligenceRuns } from '@/hooks/useFundIntelligence';
 import { useUserCampaignTargets } from '@/hooks/useCampaigns';
 import DailyBrief from '@/components/DailyBrief';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useDiscoverySuggestions } from '@/hooks/useAccountDiscovery';
 import { useAutoGmailSync } from '@/hooks/useGmailIntegration';
 
 export default function Dashboard() {
+  const supabase = useSupabase();
   useCurrencyRerender();
   useAutoGmailSync(); // Triggers daily Gmail sync if connected and overdue
   const navigate = useNavigate();

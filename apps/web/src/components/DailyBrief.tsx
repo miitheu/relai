@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -8,6 +8,7 @@ interface DailyBriefProps {
 }
 
 export default function DailyBrief({ autoGenerate }: DailyBriefProps = {}) {
+  const supabase = useSupabase();
   const { user } = useAuth();
   const [brief, setBrief] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

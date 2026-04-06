@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 interface ChurnAnalysis {
   churn_risk_score: number;
@@ -26,6 +26,7 @@ interface ChurnRiskResult {
 }
 
 export function useChurnRisk() {
+  const supabase = useSupabase();
   const [result, setResult] = useState<ChurnRiskResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

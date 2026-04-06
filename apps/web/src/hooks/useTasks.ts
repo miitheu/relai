@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useTasks(filters?: { client_id?: string; opportunity_id?: string; status?: string }) {
+  const supabase = useSupabase();
   const { user } = useAuth();
   return useQuery({
     queryKey: ['tasks', user?.id, filters],
@@ -20,6 +21,7 @@ export function useTasks(filters?: { client_id?: string; opportunity_id?: string
 }
 
 export function useCreateTask() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -33,6 +35,7 @@ export function useCreateTask() {
 }
 
 export function useUpdateTask() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
@@ -46,6 +49,7 @@ export function useUpdateTask() {
 }
 
 export function useDeleteTask() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {

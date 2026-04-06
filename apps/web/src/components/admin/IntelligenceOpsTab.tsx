@@ -5,7 +5,7 @@ import {
   useGenerateIntelligence,
   type IntelligenceRun,
 } from '@/hooks/useFundIntelligence';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useQuery } from '@tanstack/react-query';
 import {
   Brain, Loader2, RefreshCw, AlertTriangle, CheckCircle2,
@@ -24,6 +24,7 @@ const STEP_LABELS: Record<string, string> = {
 };
 
 export default function IntelligenceOpsTab() {
+  const supabase = useSupabase();
   const { data: allRuns = [], isLoading: runsLoading } = useAllIntelligenceRuns();
   const { data: noIntelAccounts = [] } = useAccountsWithoutIntelligence();
   const [filter, setFilter] = useState<'all' | 'failed' | 'completed' | 'processing'>('all');
@@ -180,6 +181,7 @@ function RerunButton({ clientId, clientName, reason }: { clientId: string; clien
 }
 
 function RunRow({ run, expanded, onToggle }: { run: IntelligenceRun & { clients: { name: string } }; expanded: boolean; onToggle: () => void }) {
+  const supabase = useSupabase();
   const { data: steps = [] } = useQuery({
     queryKey: ['run-steps', run.id],
     enabled: expanded,

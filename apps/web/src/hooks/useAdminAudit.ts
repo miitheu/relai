@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export function useAuditLog() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['admin-audit-log'],
     queryFn: async () => {
@@ -17,6 +18,7 @@ export function useAuditLog() {
 }
 
 export function useLogAdminAction() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (entry: {

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useToast } from '@/hooks/use-toast';
 
 export interface EntityResolution {
@@ -51,6 +51,7 @@ export interface ExternalSourceMapping {
 }
 
 export function useEntityResolution(clientId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['entity-resolution', clientId],
     enabled: !!clientId,
@@ -67,6 +68,7 @@ export function useEntityResolution(clientId?: string) {
 }
 
 export function useExternalSourceMappings(clientId?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['external-source-mappings', clientId],
     enabled: !!clientId,
@@ -83,6 +85,7 @@ export function useExternalSourceMappings(clientId?: string) {
 }
 
 export function useResolveEntity() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -115,6 +118,7 @@ export function useResolveEntity() {
 }
 
 export function useConfirmEntity() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -157,6 +161,7 @@ export function useConfirmEntity() {
 }
 
 export function useRejectEntity() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -181,6 +186,7 @@ export function useRejectEntity() {
 }
 
 export function useAllEntityResolutions() {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['entity-resolutions-all'],
     queryFn: async () => {
@@ -195,6 +201,7 @@ export function useAllEntityResolutions() {
 }
 
 export function useBatchResolveEntities() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { toast } = useToast();
 

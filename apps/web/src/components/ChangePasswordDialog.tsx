@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useToast } from '@/hooks/use-toast';
 
 interface ChangePasswordDialogProps {
@@ -12,6 +12,7 @@ interface ChangePasswordDialogProps {
 }
 
 export default function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
+  const supabase = useSupabase();
   const { toast } = useToast();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

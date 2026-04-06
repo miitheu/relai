@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Plus, X, GripVertical, Save, RotateCcw, Check } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useToast } from '@/hooks/use-toast';
 
 interface ConfigCategory {
@@ -176,6 +176,7 @@ function ConfigCategoryEditor({
 }
 
 export default function ConfigTab() {
+  const supabase = useSupabase();
   const { toast } = useToast();
   const [config, setConfig] = useState<ConfigCategory[]>(defaultConfig);
   const [savedConfig, setSavedConfig] = useState<ConfigCategory[]>(defaultConfig);

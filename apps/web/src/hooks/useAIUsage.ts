@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 export interface AIUsageSummaryItem {
   function_name: string;
@@ -27,6 +27,7 @@ export interface AIUsageLogEntry {
 }
 
 export function useAIUsageSummary(period?: 'today' | 'week' | 'month') {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['ai-usage-summary', period || 'month'],
     queryFn: async () => {
@@ -106,6 +107,7 @@ export function useAIUsageSummary(period?: 'today' | 'week' | 'month') {
 }
 
 export function useAIUsageLog(filters?: { function_name?: string; status?: string; limit?: number }) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['ai-usage-log', filters],
     queryFn: async () => {

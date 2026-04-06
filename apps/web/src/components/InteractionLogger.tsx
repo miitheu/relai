@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { X, MessageSquare, Phone, Video, FileText, Monitor, Search, ChevronDown } from 'lucide-react';
 import { useInteraction, InteractionType } from '@/contexts/InteractionContext';
 import { useClients, useContacts, useOpportunities, useCreateNote } from '@/hooks/useCrmData';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -66,6 +66,7 @@ function MiniSelect({ value, onChange, options, placeholder }: {
 }
 
 export default function InteractionLogger() {
+  const supabase = useSupabase();
   const { isOpen, defaults, close } = useInteraction();
   const { user } = useAuth();
   const { toast } = useToast();

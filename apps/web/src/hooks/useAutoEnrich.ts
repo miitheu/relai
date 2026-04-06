@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 
 interface EnrichmentResult {
   type: string;
@@ -20,6 +20,7 @@ interface AutoEnrichResult {
 }
 
 export function useAutoEnrich() {
+  const supabase = useSupabase();
   const [result, setResult] = useState<AutoEnrichResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

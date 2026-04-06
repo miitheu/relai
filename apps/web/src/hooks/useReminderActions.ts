@@ -1,8 +1,9 @@
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useDismissals() {
+  const supabase = useSupabase();
   const { user } = useAuth();
   const userId = user?.id;
   return useQuery({
@@ -20,6 +21,7 @@ export function useDismissals() {
 }
 
 export function useSnoozeReminder() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -40,6 +42,7 @@ export function useSnoozeReminder() {
 }
 
 export function useDismissReminder() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -60,6 +63,7 @@ export function useDismissReminder() {
 }
 
 export function useUnsnoozeReminder() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({

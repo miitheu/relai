@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface CustomFieldDefinition {
@@ -26,6 +26,7 @@ export interface CustomFieldValue {
 }
 
 export function useCustomFieldDefinitions(entityType?: string) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['custom-field-definitions', entityType || 'all'],
     queryFn: async () => {
@@ -43,6 +44,7 @@ export function useCustomFieldDefinitions(entityType?: string) {
 }
 
 export function useCustomFields(entityType: string, entityId: string | undefined) {
+  const supabase = useSupabase();
   return useQuery({
     queryKey: ['custom-field-values', entityType, entityId],
     enabled: !!entityId,
@@ -60,6 +62,7 @@ export function useCustomFields(entityType: string, entityId: string | undefined
 }
 
 export function useSaveCustomField() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
@@ -83,6 +86,7 @@ export function useSaveCustomField() {
 }
 
 export function useCreateCustomFieldDefinition() {
+  const supabase = useSupabase();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
