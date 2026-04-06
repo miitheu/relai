@@ -1,0 +1,40 @@
+project_id = "mztiyesebviylbtcmvwk"
+
+[functions.detect-duplicates]
+verify_jwt = false
+
+[functions.merge-accounts]
+verify_jwt = false
+
+[functions.resolve-entity]
+verify_jwt = false
+
+[functions.batch-resolve-entities]
+verify_jwt = false
+
+[functions.fund-intelligence]
+verify_jwt = false
+
+[functions.account-discovery]
+verify_jwt = false
+
+[functions.admin-create-user]
+verify_jwt = false
+
+[functions.campaign-scoring]
+verify_jwt = false
+
+[functions.sec-freshness-check]
+verify_jwt = false
+
+[functions.sec-import-accounts]
+verify_jwt = false
+
+[functions.campaign-email-draft]
+verify_jwt = false
+
+[functions.expand-etf-holdings]
+verify_jwt = false
+
+[functions.compute-fund-exposure]
+verify_jwt = false

@@ -1,0 +1,1 @@
+ALTER TABLE public.campaign_targets ADD COLUMN IF NOT EXISTS product_fit_analysis jsonb DEFAULT '{}'::jsonb;

@@ -1,0 +1,1 @@
+UPDATE fund_intelligence_runs SET run_status = 'failed', error_message = 'Run timed out during holdings_extraction step', updated_at = now() WHERE id = 'b86c3b13-4d8d-450b-abb5-11b906c968e5' AND run_status = 'processing';

@@ -1,0 +1,2 @@
+DELETE FROM external_source_mappings;
+DELETE FROM account_entity_resolutions;
