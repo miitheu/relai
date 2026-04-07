@@ -1,14 +1,16 @@
+// Legacy Supabase client — no longer imported by application code.
+// All data access now goes through useDb() from @relai/db/react.
+// This file is kept for reference and can be removed once
+// insightHubClient.ts is also migrated to use the adapter.
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
-import { SupabaseAdapter } from '@relai/db';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? '';
 const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY ??
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '';
 
-// Raw Supabase client — used by hooks during incremental migration (Phase 2).
-// New code should use useDb() from @relai/db/react instead.
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: localStorage,
@@ -16,6 +18,3 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, 
     autoRefreshToken: true,
   },
 });
-
-// DbAdapter instance wrapping the same credentials
-export const dbAdapter = new SupabaseAdapter(SUPABASE_URL, SUPABASE_ANON_KEY);

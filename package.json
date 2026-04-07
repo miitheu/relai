@@ -4,12 +4,15 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "pnpm --filter web dev",
-    "build": "pnpm -r build",
+    "dev:api": "pnpm --filter @relai/api dev",
+    "build": "pnpm --filter web build",
+    "setup": "tsx scripts/setup.ts",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "clean": "pnpm -r exec rm -rf dist node_modules"
   },
   "devDependencies": {
+    "tsx": "^4.19.0",
     "typescript": "^5.8.3"
   },
   "engines": {
