@@ -1,29 +1,35 @@
 import { useEffect } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useQueryClient } from '@tanstack/react-query';
+import type { DbAdapter } from '@relai/db';
 
 /**
  * Subscribe to Supabase Realtime changes on a table and auto-invalidate
  * the corresponding React Query cache when changes occur.
  *
- * Use this to replace polling (refetchInterval) patterns.
+ * NOTE: This hook requires the underlying adapter to expose a `raw` Supabase client.
+ * For non-Supabase adapters, it silently no-ops.
  */
 export function useRealtimeTable(
   table: string,
   queryKey: string[],
   filter?: { column: string; value: string },
 ) {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
 
   useEffect(() => {
     if (filter && !filter.value) return;
 
+    // Access raw Supabase client if available (SupabaseAdapter exposes .raw)
+    const rawClient = (db as any).raw;
+    if (!rawClient || !rawClient.channel) return;
+
     const channelName = filter
       ? `${table}_${filter.column}_${filter.value}`
       : `${table}_changes`;
 
-    const channel = supabase
+    const channel = rawClient
       .channel(channelName)
       .on(
         'postgres_changes',
@@ -40,7 +46,7 @@ export function useRealtimeTable(
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      rawClient.removeChannel(channel);
     };
   }, [table, queryKey.join(','), filter?.column, filter?.value, qc]);
 }

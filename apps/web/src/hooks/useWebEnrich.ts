@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
+import type { Filter } from '@relai/db';
 
 export function useWebEnrich() {
-  const supabase = useSupabase();
+  const db = useDb();
   const queryClient = useQueryClient();
   const [result, setResult] = useState<any>(null);
 
   const mutation = useMutation({
     mutationFn: async (clientId: string) => {
-      const { data, error } = await supabase.functions.invoke('web-enrich', {
-        body: { client_id: clientId },
-      });
+      const { data, error } = await db.invoke('web-enrich', { client_id: clientId });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       return data;
@@ -32,24 +31,18 @@ export function useWebEnrich() {
 }
 
 export function useEnrichmentResults(clientId: string | undefined, source?: string) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['enrichment-results', clientId, source],
     queryFn: async () => {
       if (!clientId) return [];
-      let query = supabase
-        .from('enrichment_results')
-        .select('*')
-        .eq('entity_type', 'client')
-        .eq('entity_id', clientId)
-        .order('created_at', { ascending: false });
-
-      if (source) {
-        query = query.eq('source', source);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
+      const filters: Filter[] = [
+        { column: 'entity_type', operator: 'eq', value: 'client' },
+        { column: 'entity_id', operator: 'eq', value: clientId },
+      ];
+      if (source) filters.push({ column: 'source', operator: 'eq', value: source });
+      const { data, error } = await db.query('enrichment_results', { filters, order: [{ column: 'created_at', ascending: false }] });
+      if (error) throw new Error(error.message);
       return data || [];
     },
     enabled: !!clientId,

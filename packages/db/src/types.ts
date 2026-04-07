@@ -34,9 +34,16 @@ export interface OrderBy {
   nullsFirst?: boolean;
 }
 
+export interface NotFilter {
+  column: string;
+  operator: "is" | "in" | "eq";
+  value: unknown;
+}
+
 export interface QueryOptions {
   select?: string;
   filters?: Filter[];
+  not?: NotFilter[];
   or?: string;
   order?: OrderBy[];
   limit?: number;
@@ -45,6 +52,7 @@ export interface QueryOptions {
   count?: "exact" | "planned" | "estimated";
   single?: boolean;
   maybeSingle?: boolean;
+  head?: boolean;
 }
 
 export interface UpsertOptions {
@@ -175,12 +183,19 @@ export interface DbAdapter {
   // ------ Storage (optional) ------
   uploadFile?(bucket: string, path: string, file: File): Promise<UploadResult>;
   getFileUrl?(bucket: string, path: string): string;
+  getSignedUrl?(bucket: string, path: string, expiresIn: number): Promise<string | null>;
   removeFiles?(bucket: string, paths: string[]): Promise<void>;
 
   // ------ RPC ------
   rpc<T = unknown>(
     functionName: string,
     params?: Record<string, unknown>
+  ): Promise<{ data: T; error: null } | { data: null; error: DbError }>;
+
+  // ------ Edge Functions / Invoke ------
+  invoke<T = unknown>(
+    functionName: string,
+    body?: Record<string, unknown>
   ): Promise<{ data: T; error: null } | { data: null; error: DbError }>;
 
   // ------ Capabilities ------

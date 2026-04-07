@@ -1,34 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Filter } from '@relai/db';
 
 export function useRenewals(clientId?: string) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['renewals', clientId || 'all'],
     queryFn: async () => {
-      let q = supabase.from('renewals').select('*, clients(name), datasets(name)').order('renewal_date').limit(500);
-      if (clientId) q = q.eq('client_id', clientId);
-      const { data, error } = await q;
-      if (error) throw error;
+      const filters: Filter[] = [];
+      if (clientId) filters.push({ column: 'client_id', operator: 'eq', value: clientId });
+      const { data, error } = await db.query('renewals', { select: '*, clients(name), datasets(name)', filters, order: [{ column: 'renewal_date' }], limit: 500 });
+      if (error) throw new Error(error.message);
       return data;
     },
   });
 }
 
 export function useCreateRenewal() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (input: { client_id: string; dataset_id?: string; contract_id?: string; renewal_date: string; value: number; probability?: number; status?: string; owner_id?: string }) => {
-      const { data, error } = await supabase.from('renewals').insert({
-        ...input,
-        owner_id: input.owner_id || user?.id,
-        created_by: user?.id,
-      }).select().single();
-      if (error) throw error;
-      return data;
+      const { data, error } = await db.insert('renewals', { ...input, owner_id: input.owner_id || user?.id, created_by: user?.id });
+      if (error) throw new Error(error.message);
+      return data[0];
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['renewals'] });
@@ -38,13 +35,13 @@ export function useCreateRenewal() {
 }
 
 export function useUpdateRenewal() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
-      const { data, error } = await supabase.from('renewals').update(input).eq('id', id).select('*, clients(name), datasets(name)').single();
-      if (error) throw error;
-      return data;
+      const { data, error } = await db.update('renewals', { id }, input, { select: '*, clients(name), datasets(name)' });
+      if (error) throw new Error(error.message);
+      return data[0];
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['renewals'] });

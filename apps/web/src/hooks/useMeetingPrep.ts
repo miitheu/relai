@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 
 interface MeetingBrief {
   executive_summary: string;
@@ -24,7 +24,7 @@ interface MeetingPrepResult {
 }
 
 export function useMeetingPrep() {
-  const supabase = useSupabase();
+  const db = useDb();
   const [result, setResult] = useState<MeetingPrepResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,15 +37,9 @@ export function useMeetingPrep() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke(
+      const { data, error: fnError } = await db.invoke(
         'meeting-prep',
-        {
-          body: {
-            client_id: clientId,
-            opportunity_id: opportunityId,
-            meeting_context: meetingContext,
-          },
-        },
+        { client_id: clientId, opportunity_id: opportunityId, meeting_context: meetingContext },
       );
       if (fnError) throw fnError;
       setResult(data);

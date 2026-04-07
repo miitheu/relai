@@ -1,58 +1,59 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Filter } from '@relai/db';
 
 export function useOpportunities(filters?: { client_id?: string; dataset_id?: string; stage?: string }) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['opportunities', filters],
     queryFn: async () => {
-      let q = supabase.from('opportunities').select('*, clients(name), datasets(name), opportunity_products(id, dataset_id, revenue, datasets(name))').order('created_at', { ascending: false }).limit(500);
-      if (filters?.client_id) q = q.eq('client_id', filters.client_id);
-      if (filters?.dataset_id) q = q.eq('dataset_id', filters.dataset_id);
-      if (filters?.stage) q = q.eq('stage', filters.stage);
-      const { data, error } = await q;
-      if (error) throw error;
+      const f: Filter[] = [];
+      if (filters?.client_id) f.push({ column: 'client_id', operator: 'eq', value: filters.client_id });
+      if (filters?.dataset_id) f.push({ column: 'dataset_id', operator: 'eq', value: filters.dataset_id });
+      if (filters?.stage) f.push({ column: 'stage', operator: 'eq', value: filters.stage });
+      const { data, error } = await db.query('opportunities', { select: '*, clients(name), datasets(name), opportunity_products(id, dataset_id, revenue, datasets(name))', filters: f, order: [{ column: 'created_at', ascending: false }], limit: 500 });
+      if (error) throw new Error(error.message);
       return data;
     },
   });
 }
 
 export function useCreateOpportunity() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (input: { name: string; client_id: string; dataset_id?: string; stage?: string; value: number; value_min?: number; value_max?: number; expected_close?: string; probability?: number; notes?: string; owner_id?: string; source?: string; campaign_target_id?: string; campaign_id?: string }) => {
       const payload: any = { ...input, created_by: user?.id, owner_id: input.owner_id || user?.id };
-      const { data, error } = await supabase.from('opportunities').insert(payload).select().single();
-      if (error) throw error;
-      return data;
+      const { data, error } = await db.insert('opportunities', payload);
+      if (error) throw new Error(error.message);
+      return data[0];
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['opportunities'] }),
   });
 }
 
 export function useDeleteOpportunity() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('opportunities').delete().eq('id', id);
-      if (error) throw error;
+      const { error } = await db.delete('opportunities', { id });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['opportunities'] }),
   });
 }
 
 export function useUpdateOpportunity() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
-      const { data, error } = await supabase.from('opportunities').update(input).eq('id', id).select('*, clients(name), datasets(name)').single();
-      if (error) throw error;
-      return data;
+      const { data, error } = await db.update('opportunities', { id }, input, { select: '*, clients(name), datasets(name)' });
+      if (error) throw new Error(error.message);
+      return data[0];
     },
     onMutate: async ({ id, ...input }) => {
       await qc.cancelQueries({ queryKey: ['opportunities'] });

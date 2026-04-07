@@ -1,60 +1,61 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Filter } from '@relai/db';
 
 export function useTasks(filters?: { client_id?: string; opportunity_id?: string; status?: string }) {
-  const supabase = useSupabase();
+  const db = useDb();
   const { user } = useAuth();
   return useQuery({
     queryKey: ['tasks', user?.id, filters],
     enabled: !!user,
     queryFn: async () => {
-      let q = supabase.from('tasks').select('*, clients(name), opportunities(name)').eq('user_id', user!.id).order('due_date', { ascending: true, nullsFirst: false });
-      if (filters?.client_id) q = q.eq('client_id', filters.client_id);
-      if (filters?.opportunity_id) q = q.eq('opportunity_id', filters.opportunity_id);
-      if (filters?.status) q = q.eq('status', filters.status);
-      const { data, error } = await q;
-      if (error) throw error;
+      const f: Filter[] = [{ column: 'user_id', operator: 'eq', value: user!.id }];
+      if (filters?.client_id) f.push({ column: 'client_id', operator: 'eq', value: filters.client_id });
+      if (filters?.opportunity_id) f.push({ column: 'opportunity_id', operator: 'eq', value: filters.opportunity_id });
+      if (filters?.status) f.push({ column: 'status', operator: 'eq', value: filters.status });
+      const { data, error } = await db.query('tasks', { select: '*, clients(name), opportunities(name)', filters: f, order: [{ column: 'due_date', ascending: true, nullsFirst: false }] });
+      if (error) throw new Error(error.message);
       return data;
     },
   });
 }
 
 export function useCreateTask() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (input: { title: string; description?: string; due_date?: string; priority?: string; client_id?: string; opportunity_id?: string; campaign_target_id?: string }) => {
-      const { data, error } = await supabase.from('tasks').insert({ ...input, user_id: user!.id }).select().single();
-      if (error) throw error;
-      return data;
+      const { data, error } = await db.insert('tasks', { ...input, user_id: user!.id });
+      if (error) throw new Error(error.message);
+      return data[0];
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   });
 }
 
 export function useUpdateTask() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
       if (input.status === 'done' && !input.completed_at) input.completed_at = new Date().toISOString();
-      const { data, error } = await supabase.from('tasks').update(input).eq('id', id).select().single();
-      if (error) throw error;
-      return data;
+      const { data, error } = await db.update('tasks', { id }, input);
+      if (error) throw new Error(error.message);
+      return data[0];
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   });
 }
 
 export function useDeleteTask() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('tasks').delete().eq('id', id);
-      if (error) throw error;
+      const { error } = await db.delete('tasks', { id });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   });

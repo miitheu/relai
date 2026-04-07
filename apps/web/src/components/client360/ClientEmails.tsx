@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEmails } from '@/hooks/useGmailIntegration';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Mail, ArrowDownLeft, ArrowUpRight, Lock, Eye, EyeOff,
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function ClientEmails({ clientId }: Props) {
-  const supabase = useSupabase();
+  const db = useDb();
   const { data: emails = [], isLoading } = useEmails({ client_id: clientId });
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -34,7 +34,7 @@ export default function ClientEmails({ clientId }: Props) {
 
   const handleVisibilityChange = async (emailId: string, visibility: string) => {
     try {
-      await supabase.from('emails').update({ visibility }).eq('id', emailId);
+      await db.update('emails', { ['id']: emailId }, { visibility });
       qc.invalidateQueries({ queryKey: ['emails'] });
     } catch { /* ignore */ }
   };

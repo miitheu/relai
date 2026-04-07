@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Zap, Loader2, CheckCircle2, AlertTriangle, Brain, BarChart3, RefreshCw } from 'lucide-react';
 import { useClients } from '@/hooks/useCrmData';
 import { useUpdateCampaign } from '@/hooks/useCampaigns';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { toast } from 'sonner';
 
 type Priority = 'high' | 'medium' | 'low' | 'off';
@@ -53,7 +53,7 @@ export default function CampaignScoringPanel({ campaign, targets, onComplete }: 
   targets: any[];
   onComplete?: () => void;
 }) {
-  const supabase = useSupabase();
+  const db = useDb();
   const { data: clients = [] } = useClients();
   const updateCampaign = useUpdateCampaign();
   const [scoringNew, setScoringNew] = useState(false);
@@ -113,9 +113,7 @@ export default function CampaignScoringPanel({ campaign, targets, onComplete }: 
         await updateCampaign.mutateAsync({ id: campaign.id, scoring_weights: weights });
       }
 
-      const { data, error: fnErr } = await supabase.functions.invoke('campaign-scoring', {
-        body: { campaign_id: campaign.id, rescore },
-      });
+      const { data, error: fnErr } = await db.invoke('campaign-scoring', { campaign_id: campaign.id, rescore });
 
       if (fnErr) throw fnErr;
       if (data?.error) throw new Error(data.error);
@@ -186,7 +184,7 @@ export default function CampaignScoringPanel({ campaign, targets, onComplete }: 
                   let ok = 0;
                   for (const cid of clientIds.slice(0, 10)) {
                     try {
-                      await supabase.functions.invoke('fund-intelligence', { body: { client_id: cid } });
+                      await db.invoke('fund-intelligence', { client_id: cid });
                       ok++;
                     } catch { /* continue */ }
                   }

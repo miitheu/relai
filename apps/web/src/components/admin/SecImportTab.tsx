@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,7 @@ interface ImportResult {
 const PAGE_SIZE = 25;
 
 export default function SecImportTab() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<EnrichedEntity[]>([]);
@@ -56,16 +56,14 @@ export default function SecImportTab() {
     setLoading(true);
     setImportResults(null);
     try {
-      const { data, error } = await supabase.functions.invoke('sec-import-accounts', {
-        body: {
+      const { data, error } = await db.invoke('sec-import-accounts', {
           action: 'discover',
           limit: PAGE_SIZE,
           offset: newOffset,
           name_search: nameSearch.trim() || undefined,
           sic_filter: sicFilter,
           min_aum: aum13F === '13f_filers' ? 100_000_000 : undefined,
-        },
-      });
+        });
       if (error) throw error;
       setSuggestions(data.suggestions || []);
       setTotal(data.total || 0);
@@ -101,9 +99,7 @@ export default function SecImportTab() {
     setImportResults(null);
     const entities = suggestions.filter(r => selected.has(r.cik)).map(r => ({ cik: r.cik, name: r.name, ticker: r.ticker }));
     try {
-      const { data, error } = await supabase.functions.invoke('sec-import-accounts', {
-        body: { action: 'import', entities, imported_by: user?.id },
-      });
+      const { data, error } = await db.invoke('sec-import-accounts', { action: 'import', entities, imported_by: user?.id });
       if (error) throw error;
       setImportResults(data.results || []);
       toast.success(`Imported ${data.created} new accounts, linked ${data.linked}`);

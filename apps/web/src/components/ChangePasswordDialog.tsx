@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ChangePasswordDialogProps {
@@ -12,7 +12,7 @@ interface ChangePasswordDialogProps {
 }
 
 export default function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
-  const supabase = useSupabase();
+  const db = useDb();
   const { toast } = useToast();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -29,7 +29,7 @@ export default function ChangePasswordDialog({ open, onOpenChange }: ChangePassw
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    const { error } = await (db as any).updateUser({ password: newPassword });
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {

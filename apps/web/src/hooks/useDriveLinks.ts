@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Filter } from '@relai/db';
 
 export interface DriveLink {
   id: string;
@@ -14,45 +15,42 @@ export interface DriveLink {
 }
 
 export function useDriveLinks(filters?: { client_id?: string; opportunity_id?: string }) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['drive_links', filters],
     enabled: !!(filters?.client_id || filters?.opportunity_id),
     queryFn: async () => {
-      let q = (supabase.from('drive_links' as any) as any).select('*').order('created_at', { ascending: false });
-      if (filters?.client_id) q = q.eq('client_id', filters.client_id);
-      if (filters?.opportunity_id) q = q.eq('opportunity_id', filters.opportunity_id);
-      const { data, error } = await q;
-      if (error) throw error;
+      const f: Filter[] = [];
+      if (filters?.client_id) f.push({ column: 'client_id', operator: 'eq', value: filters.client_id });
+      if (filters?.opportunity_id) f.push({ column: 'opportunity_id', operator: 'eq', value: filters.opportunity_id });
+      const { data, error } = await db.query('drive_links', { filters: f, order: [{ column: 'created_at', ascending: false }] });
+      if (error) throw new Error(error.message);
       return (data ?? []) as DriveLink[];
     },
   });
 }
 
 export function useCreateDriveLink() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (input: { client_id?: string; opportunity_id?: string; url: string; title: string; link_type: 'folder' | 'file' }) => {
-      const { data, error } = await (supabase.from('drive_links' as any) as any)
-        .insert({ ...input, created_by: user?.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return data as DriveLink;
+      const { data, error } = await db.insert('drive_links', { ...input, created_by: user?.id });
+      if (error) throw new Error(error.message);
+      return data[0] as DriveLink;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['drive_links'] }),
   });
 }
 
 export function useDeleteDriveLink() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase.from('drive_links' as any) as any).delete().eq('id', id);
-      if (error) throw error;
+      const { error } = await db.delete('drive_links', { id });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['drive_links'] }),
   });
@@ -66,7 +64,6 @@ export function parseDriveUrl(url: string): { linkType: 'folder' | 'file'; sugge
 
   let suggestedTitle = '';
   if (isDrive) {
-    // Try to extract doc type
     if (/docs\.google\.com/.test(url)) suggestedTitle = 'Google Doc';
     else if (/sheets\.google\.com/.test(url)) suggestedTitle = 'Google Sheet';
     else if (/slides\.google\.com/.test(url)) suggestedTitle = 'Google Slides';

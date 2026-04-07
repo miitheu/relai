@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { stageOrder } from '@/data/mockData';
 
 interface CrmSettingsMap {
@@ -7,15 +7,12 @@ interface CrmSettingsMap {
 }
 
 export function useCrmSettings() {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['crm-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('crm_settings' as any)
-        .select('key, value')
-        .eq('category', 'config');
-      if (error) throw error;
+      const { data, error } = await db.query('crm_settings', { select: 'key, value', filters: [{ column: 'category', operator: 'eq', value: 'config' }] });
+      if (error) throw new Error(error.message);
       const map: CrmSettingsMap = {};
       (data || []).forEach((row: any) => {
         map[row.key] = row.value;

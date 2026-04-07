@@ -2,8 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Building2, Database, TrendingUp, BarChart3, Users, Truck, RefreshCw, Home, FileText, Radar, User, Package, Shield, Sparkles } from 'lucide-react';
 import { useQuickCreate } from '@/contexts/QuickCreateContext';
-import { useSupabase } from '@/hooks/useSupabase';
-
+import { useDb } from '@relai/db/react';
 const routes = [
   { label: 'Home', path: '/', icon: Home },
   { label: 'Accounts', path: '/clients', icon: Building2 },
@@ -30,7 +29,7 @@ interface SearchResult {
 }
 
 export default function CommandPalette() {
-  const supabase = useSupabase();
+  const db = useDb();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [liveResults, setLiveResults] = useState<SearchResult[]>([]);
@@ -67,10 +66,10 @@ export default function CommandPalette() {
       try {
         const q = `%${query}%`;
         const [clientsRes, contactsRes, oppsRes, datasetsRes] = await Promise.all([
-          supabase.from('clients').select('id, name, type, country').ilike('name', q).limit(5),
-          supabase.from('contacts').select('id, first_name, last_name, title, client_id').or(`first_name.ilike.${q},last_name.ilike.${q}`).limit(5),
-          supabase.from('opportunities').select('id, name, stage, value').ilike('name', q).limit(5),
-          supabase.from('datasets').select('id, name, category').ilike('name', q).limit(5),
+          db.query('clients', { select: 'id, name, type, country', filters: [{ column: 'name', operator: 'ilike', value: q }], limit: 5 }),
+          db.query('contacts', { select: 'id, first_name, last_name, title, client_id', or: `first_name.ilike.${q},last_name.ilike.${q}`, limit: 5 }),
+          db.query('opportunities', { select: 'id, name, stage, value', filters: [{ column: 'name', operator: 'ilike', value: q }], limit: 5 }),
+          db.query('datasets', { select: 'id, name, category', filters: [{ column: 'name', operator: 'ilike', value: q }], limit: 5 }),
         ]);
 
         const results: SearchResult[] = [];

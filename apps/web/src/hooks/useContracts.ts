@@ -1,94 +1,49 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
+import type { Filter } from '@relai/db';
 
-export interface Contract {
-  id: string;
-  client_id: string;
-  opportunity_id: string | null;
-  file_name: string;
-  file_path: string;
-  file_size: number | null;
-  mime_type: string | null;
-  uploaded_by: string | null;
-  notes: string | null;
-  created_at: string;
-  // joined
-  opportunity_name?: string;
-}
+export interface Contract { id: string; client_id: string; opportunity_id: string | null; file_name: string; file_path: string; file_size: number | null; mime_type: string | null; uploaded_by: string | null; notes: string | null; created_at: string; opportunity_name?: string; }
 
 export function useContracts(clientId?: string) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['contracts', clientId || 'all'],
     enabled: !!clientId,
     queryFn: async () => {
-      let q = (supabase.from('contracts' as any) as any)
-        .select('*, opportunities:opportunity_id(name)')
-        .order('created_at', { ascending: false });
-      if (clientId) q = q.eq('client_id', clientId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return ((data || []) as any[]).map((c: any) => ({
-        ...c,
-        opportunity_name: c.opportunities?.name || null,
-      })) as Contract[];
+      const filters: Filter[] = [];
+      if (clientId) filters.push({ column: 'client_id', operator: 'eq', value: clientId });
+      const { data, error } = await db.query('contracts', { select: '*, opportunities:opportunity_id(name)', filters, order: [{ column: 'created_at', ascending: false }] });
+      if (error) throw new Error(error.message);
+      return ((data || []) as any[]).map((c: any) => ({ ...c, opportunity_name: c.opportunities?.name || null })) as Contract[];
     },
   });
 }
 
 export function useUploadContract() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      clientId,
-      opportunityId,
-      file,
-      notes,
-    }: {
-      clientId: string;
-      opportunityId?: string;
-      file: File;
-      notes?: string;
-    }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+    mutationFn: async ({ clientId, opportunityId, file, notes }: { clientId: string; opportunityId?: string; file: File; notes?: string; }) => {
+      const user = await db.getCurrentUser();
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = `${clientId}/${Date.now()}_${safeName}`;
 
-      const { error: uploadErr } = await supabase.storage
-        .from('contracts')
-        .upload(path, file, { upsert: false });
-      if (uploadErr) throw uploadErr;
+      await db.uploadFile!('contracts', path, file);
 
-      const { error: insertErr } = await (supabase.from('contracts' as any) as any)
-        .insert({
-          client_id: clientId,
-          opportunity_id: opportunityId || null,
-          file_name: file.name,
-          file_path: path,
-          file_size: file.size,
-          mime_type: file.type || 'application/octet-stream',
-          uploaded_by: user?.id || null,
-          notes: notes || null,
-        });
-      if (insertErr) throw insertErr;
+      const { error: insertErr } = await db.insert('contracts', {
+        client_id: clientId, opportunity_id: opportunityId || null,
+        file_name: file.name, file_path: path, file_size: file.size,
+        mime_type: file.type || 'application/octet-stream',
+        uploaded_by: user?.id || null, notes: notes || null,
+      });
+      if (insertErr) throw new Error(insertErr.message);
 
-      // Auto-resolve "upload contract" action item banner if linked to opportunity
       if (opportunityId) {
-        const { data: signedUrl } = await supabase.storage
-          .from('contracts')
-          .createSignedUrl(path, 60 * 60 * 24 * 365);
-
-        await (supabase.from('account_action_items' as any) as any)
-          .update({
-            status: 'completed',
-            resolved_at: new Date().toISOString(),
-            resolved_by: user?.id || null,
-            file_url: signedUrl?.signedUrl || path,
-          })
-          .eq('opportunity_id', opportunityId)
-          .eq('action_type', 'upload_contract')
-          .eq('status', 'pending');
+        const signedResult = await db.getSignedUrl!('contracts', path, 60 * 60 * 24 * 365);
+        const signedUrl = (signedResult as any)?.signedUrl || path;
+        await db.update('account_action_items', { opportunity_id: opportunityId, action_type: 'upload_contract', status: 'pending' }, {
+          status: 'completed', resolved_at: new Date().toISOString(), resolved_by: user?.id || null, file_url: signedUrl,
+        });
       }
     },
     onSuccess: () => {
@@ -99,26 +54,19 @@ export function useUploadContract() {
 }
 
 export function useDeleteContract() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, filePath }: { id: string; filePath: string }) => {
-      await supabase.storage.from('contracts').remove([filePath]);
-      const { error } = await (supabase.from('contracts' as any) as any)
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      await db.removeFiles!('contracts', [filePath]);
+      const { error } = await db.delete('contracts', { id });
+      if (error) throw new Error(error.message);
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['contracts'] });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['contracts'] }); },
   });
 }
 
-export async function getContractDownloadUrl(filePath: string): Promise<string> {
-  const { data, error } = await supabase.storage
-    .from('contracts')
-    .createSignedUrl(filePath, 60 * 60); // 1 hour
-  if (error) throw error;
-  return data.signedUrl;
+export async function getContractDownloadUrl(db: ReturnType<typeof useDb>, filePath: string): Promise<string> {
+  const result = await db.getSignedUrl!('contracts', filePath, 60 * 60);
+  return (result as any).signedUrl;
 }

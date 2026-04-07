@@ -1,27 +1,24 @@
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useDismissals() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { user } = useAuth();
   const userId = user?.id;
   return useQuery({
     queryKey: ['action_dismissals', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('action_dismissals')
-        .select('action_key, dismissed_until')
-        .eq('user_id', userId!);
-      if (error) throw error;
+      const { data, error } = await db.query('action_dismissals', { select: 'action_key, dismissed_until', filters: [{ column: 'user_id', operator: 'eq', value: userId! }] });
+      if (error) throw new Error(error.message);
       return data;
     },
   });
 }
 
 export function useSnoozeReminder() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -29,20 +26,18 @@ export function useSnoozeReminder() {
       if (!user?.id) throw new Error('Not authenticated');
       const until = new Date();
       until.setDate(until.getDate() + days);
-      const { error } = await supabase
-        .from('action_dismissals')
-        .upsert(
-          { user_id: user.id, action_key: actionKey, dismissed_until: until.toISOString() },
-          { onConflict: 'user_id,action_key' }
-        );
-      if (error) throw error;
+      const { error } = await db.upsert('action_dismissals',
+        { user_id: user.id, action_key: actionKey, dismissed_until: until.toISOString() },
+        { onConflict: 'user_id,action_key' }
+      );
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['action_dismissals'] }),
   });
 }
 
 export function useDismissReminder() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
@@ -50,31 +45,29 @@ export function useDismissReminder() {
       if (!user?.id) throw new Error('Not authenticated');
       const until = new Date();
       until.setFullYear(until.getFullYear() + 1);
-      const { error } = await supabase
-        .from('action_dismissals')
-        .upsert(
-          { user_id: user.id, action_key: actionKey, dismissed_until: until.toISOString() },
-          { onConflict: 'user_id,action_key' }
-        );
-      if (error) throw error;
+      const { error } = await db.upsert('action_dismissals',
+        { user_id: user.id, action_key: actionKey, dismissed_until: until.toISOString() },
+        { onConflict: 'user_id,action_key' }
+      );
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['action_dismissals'] }),
   });
 }
 
 export function useUnsnoozeReminder() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (actionKey: string) => {
       if (!user?.id) throw new Error('Not authenticated');
-      const { error } = await supabase
-        .from('action_dismissals')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('action_key', actionKey);
-      if (error) throw error;
+      // Find and delete the dismissal
+      const { data } = await db.query('action_dismissals', { select: 'id', filters: [{ column: 'user_id', operator: 'eq', value: user.id }, { column: 'action_key', operator: 'eq', value: actionKey }] });
+      if (data && data[0]) {
+        const { error } = await db.delete('action_dismissals', { id: data[0].id });
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['action_dismissals'] }),
   });

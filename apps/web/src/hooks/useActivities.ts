@@ -1,16 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
+import type { Filter } from '@relai/db';
 
 export function useActivities(filters?: { client_id?: string; opportunity_id?: string }) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['activities', filters],
     queryFn: async () => {
-      let q = supabase.from('activities').select('*').order('created_at', { ascending: false }).limit(1000);
-      if (filters?.client_id) q = q.eq('client_id', filters.client_id);
-      if (filters?.opportunity_id) q = q.eq('opportunity_id', filters.opportunity_id);
-      const { data, error } = await q;
-      if (error) throw error;
+      const f: Filter[] = [];
+      if (filters?.client_id) f.push({ column: 'client_id', operator: 'eq', value: filters.client_id });
+      if (filters?.opportunity_id) f.push({ column: 'opportunity_id', operator: 'eq', value: filters.opportunity_id });
+      const { data, error } = await db.query('activities', { filters: f, order: [{ column: 'created_at', ascending: false }], limit: 1000 });
+      if (error) throw new Error(error.message);
       return data;
     },
   });

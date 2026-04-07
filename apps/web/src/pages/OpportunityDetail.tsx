@@ -4,7 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import LoadingState from '@/components/LoadingState';
 import { useOpportunities, useUpdateOpportunity, useDeleteOpportunity, useNotes, useActivities, useContacts, useDeliveries, useDatasets } from '@/hooks/useCrmData';
 import { useProfiles } from '@/hooks/useProfiles';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatCurrency, getStageColor, stageOrder, ICEBOX_STAGES } from '@/data/mockData';
 import { useCurrencyRerender } from '@/hooks/useCurrencyRerender';
@@ -44,7 +44,7 @@ const ballStatusOptions: { value: BallStatus; label: string }[] = [
 ];
 
 export default function OpportunityDetail() {
-  const supabase = useSupabase();
+  const db = useDb();
   useCurrencyRerender();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -99,7 +99,7 @@ export default function OpportunityDetail() {
     queryKey: ['meetings', id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase.from('meetings').select('*').eq('opportunity_id', id!).order('meeting_date', { ascending: false });
+      const { data, error } = await db.query('meetings', { select: '*', filters: [{ column: 'opportunity_id', operator: 'eq', value: id! }], order: [{ column: 'meeting_date', ascending: false }] });
       if (error) throw error;
       return data;
     },
@@ -109,7 +109,7 @@ export default function OpportunityDetail() {
     queryKey: ['emails', id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase.from('emails').select('*').eq('opportunity_id', id!).order('email_date', { ascending: false });
+      const { data, error } = await db.query('emails', { select: '*', filters: [{ column: 'opportunity_id', operator: 'eq', value: id! }], order: [{ column: 'email_date', ascending: false }] });
       if (error) throw error;
       return data;
     },
@@ -759,7 +759,7 @@ export default function OpportunityDetail() {
                     onClick={async (ev) => {
                       ev.stopPropagation();
                       if (!confirm('Delete this email?')) return;
-                      await supabase.from('emails').delete().eq('id', e.id);
+                      await db.delete('emails', { ['id']: e.id });
                       qc.invalidateQueries({ queryKey: ['emails', id] });
                     }}
                     className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-opacity shrink-0"

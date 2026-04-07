@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 
 interface SearchResult {
   id: string;
@@ -11,7 +11,7 @@ interface SearchResult {
 }
 
 export function useSemanticSearch() {
-  const supabase = useSupabase();
+  const db = useDb();
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,15 +24,9 @@ export function useSemanticSearch() {
     setIsSearching(true);
     setError(null);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke(
+      const { data, error: fnError } = await db.invoke(
         'semantic-search',
-        {
-          body: {
-            query,
-            entity_type: entityType,
-            match_count: matchCount || 10,
-          },
-        },
+        { query, entity_type: entityType, match_count: matchCount || 10 },
       );
       if (fnError) throw fnError;
       setResults(data?.results || []);

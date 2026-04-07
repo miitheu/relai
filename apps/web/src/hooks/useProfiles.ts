@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 
 export function useProfiles() {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['profiles'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('profiles').select('*').eq('is_active', true).order('full_name');
-      if (error) throw error;
+      const { data, error } = await db.query('profiles', { filters: [{ column: 'is_active', operator: 'eq', value: true }], order: [{ column: 'full_name' }] });
+      if (error) throw new Error(error.message);
       return data;
     },
   });

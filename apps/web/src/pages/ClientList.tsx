@@ -9,14 +9,14 @@ import EmptyState from '@/components/EmptyState';
 import { useToast } from '@/hooks/use-toast';
 import { useAllEntityResolutions } from '@/hooks/useEntityResolution';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import BulkActionsBar from '@/components/BulkActionsBar';
 import FilterBuilder, { type FilterCondition } from '@/components/filters/FilterBuilder';
 
 export default function ClientList() {
-  const supabase = useSupabase();
+  const db = useDb();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -43,31 +43,12 @@ export default function ClientList() {
   useEffect(() => {
     (async () => {
       const [runsRes, fitsRes, activitiesRes, oppsRes, emailsRes, meetingsRes] = await Promise.all([
-        supabase
-          .from('fund_intelligence_runs')
-          .select('client_id, run_status')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('product_fit_analyses' as any)
-          .select('client_id, fit_score, coverage_overlap_score, product_id, datasets(name)')
-          .eq('is_latest', true)
-          .order('fit_score', { ascending: false }),
-        supabase
-          .from('activities')
-          .select('client_id, created_at')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('opportunities')
-          .select('client_id, value')
-          .not('stage', 'in', '("Closed Won","Closed Lost")'),
-        supabase
-          .from('emails')
-          .select('client_id, email_date')
-          .order('email_date', { ascending: false }),
-        supabase
-          .from('meetings')
-          .select('client_id, meeting_date')
-          .order('meeting_date', { ascending: false }),
+        db.query('fund_intelligence_runs', { select: 'client_id, run_status', order: [{ column: 'created_at', ascending: false }] }),
+        db.query('product_fit_analyses', { select: 'client_id, fit_score, coverage_overlap_score, product_id, datasets(name)', filters: [{ column: 'is_latest', operator: 'eq', value: true }], order: [{ column: 'fit_score', ascending: false }] }),
+        db.query('activities', { select: 'client_id, created_at', order: [{ column: 'created_at', ascending: false }] }),
+        db.query('opportunities', { select: 'client_id, value', not: [{ column: 'stage', operator: 'in', value: '("Closed Won","Closed Lost")' }] }),
+        db.query('emails', { select: 'client_id, email_date', order: [{ column: 'email_date', ascending: false }] }),
+        db.query('meetings', { select: 'client_id, meeting_date', order: [{ column: 'meeting_date', ascending: false }] }),
       ]);
 
       const map: Record<string, { status: string }> = {};
@@ -126,10 +107,7 @@ export default function ClientList() {
 
     try {
       // 1. Get accounts with external source mappings (have SEC data)
-      const { data: mappings } = await supabase
-        .from('external_source_mappings')
-        .select('client_id, external_entity_name')
-        .in('external_source_type', ['sec_filer', 'sec_issuer', 'sec_adviser']);
+      const { data: mappings } = await db.query('external_source_mappings', { select: 'client_id, external_entity_name', filters: [{ column: 'external_source_type', operator: 'in', value: ['sec_filer', 'sec_issuer', 'sec_adviser'] }] });
 
       if (!mappings?.length) {
         toast({ title: 'No eligible accounts', description: 'No accounts have SEC source mappings yet.' });
@@ -152,9 +130,7 @@ export default function ClientList() {
           }, []);
       } else {
         // 2. Get accounts that already have intelligence runs
-        const { data: existingRuns } = await supabase
-          .from('fund_intelligence_runs')
-          .select('client_id');
+        const { data: existingRuns } = await db.query('fund_intelligence_runs', { select: 'client_id' });
         const hasRun = new Set((existingRuns || []).map((r: any) => r.client_id));
 
         // 3. Filter to eligible: has mapping, no existing run
@@ -183,9 +159,7 @@ export default function ClientList() {
         setBulkProgress(prev => ({ ...prev, done: i, current: clientName }));
 
         try {
-          const { data, error } = await supabase.functions.invoke('fund-intelligence', {
-            body: { client_id: clientId, client_name: clientName, user_id: user?.id, run_reason: 'bulk' },
-          });
+          const { data, error } = await db.invoke('fund-intelligence', { client_id: clientId, client_name: clientName, user_id: user?.id, run_reason: 'bulk' });
           if (error || data?.error) { failed++; } else { succeeded++; }
         } catch { failed++; }
 

@@ -13,12 +13,12 @@ import ActionCenterPanel from '@/components/ActionCenterPanel';
 import { useAllIntelligenceRuns } from '@/hooks/useFundIntelligence';
 import { useUserCampaignTargets } from '@/hooks/useCampaigns';
 import DailyBrief from '@/components/DailyBrief';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useDiscoverySuggestions } from '@/hooks/useAccountDiscovery';
 import { useAutoGmailSync } from '@/hooks/useGmailIntegration';
 
 export default function Dashboard() {
-  const supabase = useSupabase();
+  const db = useDb();
   useCurrencyRerender();
   useAutoGmailSync(); // Triggers daily Gmail sync if connected and overdue
   const navigate = useNavigate();
@@ -40,15 +40,8 @@ export default function Dashboard() {
   useEffect(() => {
     (async () => {
       const [fitsRes, activitiesRes] = await Promise.all([
-        supabase
-          .from('product_fit_analyses' as any)
-          .select('client_id, fit_score, datasets(name)')
-          .eq('is_latest', true)
-          .order('fit_score', { ascending: false }),
-        supabase
-          .from('activities')
-          .select('client_id, created_at')
-          .order('created_at', { ascending: false }),
+        db.query('product_fit_analyses', { select: 'client_id, fit_score, datasets(name)', filters: [{ column: 'is_latest', operator: 'eq', value: true }], order: [{ column: 'fit_score', ascending: false }] }),
+        db.query('activities', { select: 'client_id, created_at', order: [{ column: 'created_at', ascending: false }] }),
       ]);
 
       const fMap: Record<string, { topScore: number; topProduct: string | null }> = {};

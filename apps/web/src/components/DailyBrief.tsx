@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -8,7 +8,7 @@ interface DailyBriefProps {
 }
 
 export default function DailyBrief({ autoGenerate }: DailyBriefProps = {}) {
-  const supabase = useSupabase();
+  const db = useDb();
   const { user } = useAuth();
   const [brief, setBrief] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,9 +21,7 @@ export default function DailyBrief({ autoGenerate }: DailyBriefProps = {}) {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('daily-brief', {
-        body: { user_id: user.id },
-      });
+      const { data, error: fnError } = await db.invoke('daily-brief', { user_id: user.id });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
       setBrief(data.brief);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 
 interface ChurnAnalysis {
   churn_risk_score: number;
@@ -26,7 +26,7 @@ interface ChurnRiskResult {
 }
 
 export function useChurnRisk() {
-  const supabase = useSupabase();
+  const db = useDb();
   const [result, setResult] = useState<ChurnRiskResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,9 +35,9 @@ export function useChurnRisk() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke(
+      const { data, error: fnError } = await db.invoke(
         'churn-risk',
-        { body: { client_id: clientId } },
+        { client_id: clientId },
       );
       if (fnError) throw fnError;
       setResult(data);

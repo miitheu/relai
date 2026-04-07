@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import AppLayout from '@/components/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useToast } from '@/hooks/use-toast';
 import { Settings as SettingsIcon, User, KeyRound, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Settings() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { profile } = useAuth();
   const { toast } = useToast();
 
@@ -41,7 +41,7 @@ export default function Settings() {
       return;
     }
     setChangingPassword(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    const { error } = await (db as any).updateUser({ password: newPassword });
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {

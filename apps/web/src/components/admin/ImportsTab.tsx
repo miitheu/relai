@@ -1,21 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Upload } from 'lucide-react';
 
 export default function ImportsTab() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { data: batches, isLoading } = useQuery({
     queryKey: ['admin-import-batches'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contact_import_batches')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
+      const { data, error } = await db.query('contact_import_batches', { order: [{ column: 'created_at', ascending: false }], limit: 50 });
+      if (error) throw new Error(error.message);
       return data;
     },
   });
@@ -23,11 +19,8 @@ export default function ImportsTab() {
   const { data: unresolvedCount } = useQuery({
     queryKey: ['admin-unresolved-staging'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('contact_import_staging')
-        .select('id', { count: 'exact', head: true })
-        .eq('resolution_status', 'pending');
-      if (error) throw error;
+      const { count, error } = await db.query('contact_import_staging', { select: 'id', count: 'exact', head: true, filters: [{ column: 'resolution_status', operator: 'eq', value: 'pending' }] });
+      if (error) throw new Error(error.message);
       return count || 0;
     },
   });

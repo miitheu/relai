@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useCreateClient } from '@/hooks/useCrmData';
 import { Compass, Loader2, Building2, Plus, CheckCircle2, ExternalLink, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,7 +17,7 @@ interface SimilarCompany {
 }
 
 export default function SimilarAccountsTab({ clientId, clientName, clientType }: {
-  const supabase = useSupabase();
+  const db = useDb();
   clientId: string;
   clientName: string;
   clientType: string;
@@ -32,9 +32,7 @@ export default function SimilarAccountsTab({ clientId, clientName, clientType }:
   const runDiscovery = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('account-discovery', {
-        body: { client_id: clientId },
-      });
+      const { data, error } = await db.invoke('account-discovery', { client_id: clientId });
       if (error) throw error;
       setSuggestions(data.suggestions || []);
       setHasRun(true);

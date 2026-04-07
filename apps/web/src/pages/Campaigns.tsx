@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCampaigns, useCreateCampaign, useCreateCampaignTarget, useCampaignTargets } from '@/hooks/useCampaigns';
 import { useImportSuggestion } from '@/hooks/useAccountDiscovery';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useDatasets } from '@/hooks/useCrmData';
 import LoadingState from '@/components/LoadingState';
 import EmptyState from '@/components/EmptyState';
@@ -105,7 +105,7 @@ function CampaignRow({ campaign, onClick }: { campaign: any; onClick: () => void
 }
 
 export default function Campaigns() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { data: campaigns = [], isLoading } = useCampaigns();
   const { data: datasets = [] } = useDatasets();
   const createCampaign = useCreateCampaign();
@@ -125,13 +125,7 @@ export default function Campaigns() {
       if (seed_discovery_name) {
         toast.success('Campaign created — importing discovery targets...');
         try {
-          const { data: discoverySuggestions } = await supabase
-            .from('discovery_suggestions')
-            .select('*')
-            .eq('discovery_name', seed_discovery_name)
-            .eq('status', 'new')
-            .order('composite_score', { ascending: false })
-            .limit(values.max_targets || 25);
+          const { data: discoverySuggestions } = await db.query('discovery_suggestions', { filters: [{ column: 'discovery_name', operator: 'eq', value: seed_discovery_name }, { column: 'status', operator: 'eq', value: 'new' }], order: [{ column: 'composite_score', ascending: false }], limit: values.max_targets || 25 });
 
           let imported = 0;
           for (const s of (discoverySuggestions || [])) {

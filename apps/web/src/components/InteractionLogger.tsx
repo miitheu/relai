@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { X, MessageSquare, Phone, Video, FileText, Monitor, Search, ChevronDown } from 'lucide-react';
 import { useInteraction, InteractionType } from '@/contexts/InteractionContext';
 import { useClients, useContacts, useOpportunities, useCreateNote } from '@/hooks/useCrmData';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -66,7 +66,7 @@ function MiniSelect({ value, onChange, options, placeholder }: {
 }
 
 export default function InteractionLogger() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { isOpen, defaults, close } = useInteraction();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -122,7 +122,7 @@ export default function InteractionLogger() {
           opportunity_id: oppId || undefined,
         });
       } else if (type === 'meeting') {
-        await supabase.from('meetings').insert({
+        await db.insert('meetings', {
           summary: content.trim(),
           participants: subject || undefined,
           client_id: clientId || undefined,
@@ -132,7 +132,7 @@ export default function InteractionLogger() {
         }).throwOnError();
         qc.invalidateQueries({ queryKey: ['meetings'] });
       } else if (type === 'email') {
-        await supabase.from('emails').insert({
+        await db.insert('emails', {
           subject: subject || 'Email',
           summary: content.trim(),
           client_id: clientId || undefined,
@@ -143,7 +143,7 @@ export default function InteractionLogger() {
         qc.invalidateQueries({ queryKey: ['emails'] });
       } else {
         // call / demo → store as activity
-        await supabase.from('activities').insert({
+        await db.insert('activities', {
           activity_type: type,
           description: `${subject ? subject + ': ' : ''}${content.trim()}`,
           client_id: clientId || undefined,

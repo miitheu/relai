@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 
 interface EnrichmentResult {
   type: string;
@@ -20,7 +20,7 @@ interface AutoEnrichResult {
 }
 
 export function useAutoEnrich() {
-  const supabase = useSupabase();
+  const db = useDb();
   const [result, setResult] = useState<AutoEnrichResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,14 +29,9 @@ export function useAutoEnrich() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke(
+      const { data, error: fnError } = await db.invoke(
         'auto-enrich',
-        {
-          body: {
-            client_id: clientId,
-            enrichment_types: enrichmentTypes,
-          },
-        },
+        { client_id: clientId, enrichment_types: enrichmentTypes },
       );
       if (fnError) throw fnError;
       setResult(data);

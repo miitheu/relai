@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
+import type { Filter } from '@relai/db';
 
 export interface AIUsageSummaryItem {
   function_name: string;
@@ -27,7 +28,7 @@ export interface AIUsageLogEntry {
 }
 
 export function useAIUsageSummary(period?: 'today' | 'week' | 'month') {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['ai-usage-summary', period || 'month'],
     queryFn: async () => {
@@ -45,17 +46,15 @@ export function useAIUsageSummary(period?: 'today' | 'week' | 'month') {
         since = d.toISOString();
       }
 
-      const { data, error } = await supabase
-        .from('ai_usage_log' as any)
-        .select('*')
-        .gte('created_at', since)
-        .order('created_at', { ascending: false })
-        .limit(5000);
-      if (error) throw error;
+      const { data, error } = await db.query('ai_usage_log', {
+        filters: [{ column: 'created_at', operator: 'gte', value: since }],
+        order: [{ column: 'created_at', ascending: false }],
+        limit: 5000,
+      });
+      if (error) throw new Error(error.message);
 
       const entries = data as unknown as AIUsageLogEntry[];
 
-      // Aggregate by function_name + model
       const map = new Map<string, AIUsageSummaryItem>();
       let totalTokens = 0;
       let totalCost = 0;
@@ -89,7 +88,6 @@ export function useAIUsageSummary(period?: 'today' | 'week' | 'month') {
         }
       }
 
-      // Finalize avg
       for (const item of map.values()) {
         item.avg_response_ms = item.call_count > 0 ? Math.round(item.avg_response_ms / item.call_count) : 0;
       }
@@ -107,19 +105,19 @@ export function useAIUsageSummary(period?: 'today' | 'week' | 'month') {
 }
 
 export function useAIUsageLog(filters?: { function_name?: string; status?: string; limit?: number }) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['ai-usage-log', filters],
     queryFn: async () => {
-      let q = supabase
-        .from('ai_usage_log' as any)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(filters?.limit || 100);
-      if (filters?.function_name) q = q.eq('function_name', filters.function_name);
-      if (filters?.status) q = q.eq('status', filters.status);
-      const { data, error } = await q;
-      if (error) throw error;
+      const f: Filter[] = [];
+      if (filters?.function_name) f.push({ column: 'function_name', operator: 'eq', value: filters.function_name });
+      if (filters?.status) f.push({ column: 'status', operator: 'eq', value: filters.status });
+      const { data, error } = await db.query('ai_usage_log', {
+        filters: f,
+        order: [{ column: 'created_at', ascending: false }],
+        limit: filters?.limit || 100,
+      });
+      if (error) throw new Error(error.message);
       return data as unknown as AIUsageLogEntry[];
     },
   });

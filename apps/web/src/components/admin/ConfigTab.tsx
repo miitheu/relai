@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Plus, X, GripVertical, Save, RotateCcw, Check } from 'lucide-react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ConfigCategory {
@@ -176,7 +176,7 @@ function ConfigCategoryEditor({
 }
 
 export default function ConfigTab() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { toast } = useToast();
   const [config, setConfig] = useState<ConfigCategory[]>(defaultConfig);
   const [savedConfig, setSavedConfig] = useState<ConfigCategory[]>(defaultConfig);
@@ -187,10 +187,7 @@ export default function ConfigTab() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase
-          .from('crm_settings')
-          .select('key, value')
-          .eq('category', 'config');
+        const { data } = await db.query('crm_settings', { select: 'key, value', filters: [{ column: 'category', operator: 'eq', value: 'config' }] });
 
         if (data && data.length > 0) {
           const overrides = new Map(data.map((r: any) => [r.key, r.value]));
@@ -223,7 +220,7 @@ export default function ConfigTab() {
       );
 
       for (const cat of changed) {
-        await supabase.from('crm_settings').upsert(
+        await db.upsert('crm_settings',
           { key: cat.key, category: 'config', value: cat.values, updated_at: new Date().toISOString() },
           { onConflict: 'key' }
         );

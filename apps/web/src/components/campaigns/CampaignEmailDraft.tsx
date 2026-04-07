@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Mail, Loader2, Copy, Check, X } from 'lucide-react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function CampaignEmailDraft({ target, campaign, onClose }: Props) {
-  const supabase = useSupabase();
+  const db = useDb();
   const [loading, setLoading] = useState(false);
   const [emailDraft, setEmailDraft] = useState<{ subject: string; body: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -22,8 +22,7 @@ export default function CampaignEmailDraft({ target, campaign, onClose }: Props)
   const generate = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('campaign-email-draft', {
-        body: {
+      const { data, error } = await db.invoke('campaign-email-draft', {
           campaign_name: campaign.name,
           campaign_focus: campaign.focus,
           campaign_description: campaign.description,
@@ -40,8 +39,7 @@ export default function CampaignEmailDraft({ target, campaign, onClose }: Props)
           sector_relevance: productFit.sector_relevance,
           supporting_companies: productFit.supporting_companies,
           evidence_summary: productFit.evidence_summary,
-        },
-      });
+        });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

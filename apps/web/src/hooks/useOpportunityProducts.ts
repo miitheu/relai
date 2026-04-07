@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 
 export interface OpportunityProduct {
   id: string;
@@ -12,16 +12,16 @@ export interface OpportunityProduct {
 }
 
 export function useOpportunityProducts(opportunityId?: string) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['opportunity-products', opportunityId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('opportunity_products' as any)
-        .select('*, datasets(name)')
-        .eq('opportunity_id', opportunityId!)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
+      const { data, error } = await db.query('opportunity_products', {
+        select: '*, datasets(name)',
+        filters: [{ column: 'opportunity_id', operator: 'eq', value: opportunityId! }],
+        order: [{ column: 'created_at', ascending: true }],
+      });
+      if (error) throw new Error(error.message);
       return (data || []) as unknown as OpportunityProduct[];
     },
     enabled: !!opportunityId,
@@ -29,7 +29,7 @@ export function useOpportunityProducts(opportunityId?: string) {
 }
 
 export function useAddOpportunityProduct() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ opportunityId, datasetId, revenue, notes }: {
@@ -38,18 +38,14 @@ export function useAddOpportunityProduct() {
       revenue: number;
       notes?: string;
     }) => {
-      const { data, error } = await supabase
-        .from('opportunity_products' as any)
-        .insert({
-          opportunity_id: opportunityId,
-          dataset_id: datasetId,
-          revenue: revenue || 0,
-          notes: notes || null,
-        } as any)
-        .select('*, datasets(name)')
-        .single();
-      if (error) throw error;
-      return data as unknown as OpportunityProduct;
+      const { data, error } = await db.insert('opportunity_products', {
+        opportunity_id: opportunityId,
+        dataset_id: datasetId,
+        revenue: revenue || 0,
+        notes: notes || null,
+      });
+      if (error) throw new Error(error.message);
+      return data[0] as unknown as OpportunityProduct;
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['opportunity-products', vars.opportunityId] });
@@ -59,7 +55,7 @@ export function useAddOpportunityProduct() {
 }
 
 export function useUpdateOpportunityProduct() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, opportunityId, ...updates }: {
@@ -68,14 +64,9 @@ export function useUpdateOpportunityProduct() {
       revenue?: number;
       notes?: string;
     }) => {
-      const { data, error } = await supabase
-        .from('opportunity_products' as any)
-        .update(updates as any)
-        .eq('id', id)
-        .select('*, datasets(name)')
-        .single();
-      if (error) throw error;
-      return data as unknown as OpportunityProduct;
+      const { data, error } = await db.update('opportunity_products', { id }, updates);
+      if (error) throw new Error(error.message);
+      return data[0] as unknown as OpportunityProduct;
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['opportunity-products', vars.opportunityId] });
@@ -85,15 +76,12 @@ export function useUpdateOpportunityProduct() {
 }
 
 export function useRemoveOpportunityProduct() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, opportunityId }: { id: string; opportunityId: string }) => {
-      const { error } = await supabase
-        .from('opportunity_products' as any)
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
+      const { error } = await db.delete('opportunity_products', { id });
+      if (error) throw new Error(error.message);
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['opportunity-products', vars.opportunityId] });

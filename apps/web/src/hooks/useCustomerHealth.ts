@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 
 export interface CustomerHealthScore {
   id: string;
@@ -25,41 +25,34 @@ export interface CustomerHealthListItem {
 }
 
 export function useCustomerHealth(clientId: string | undefined) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['customer-health', clientId],
     enabled: !!clientId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customer_health_scores' as any)
-        .select('*')
-        .eq('client_id', clientId!)
-        .order('calculated_at', { ascending: false })
-        .limit(30);
-      if (error) throw error;
+      const { data, error } = await db.query('customer_health_scores', {
+        filters: [{ column: 'client_id', operator: 'eq', value: clientId! }],
+        order: [{ column: 'calculated_at', ascending: false }],
+        limit: 30,
+      });
+      if (error) throw new Error(error.message);
       const scores = data as unknown as CustomerHealthScore[];
-      return {
-        latest: scores[0] || null,
-        history: scores,
-      };
+      return { latest: scores[0] || null, history: scores };
     },
   });
 }
 
 export function useCustomerHealthList() {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['customer-health-list'],
     queryFn: async () => {
-      // Get latest health score per client with client name
-      const { data, error } = await supabase
-        .from('customer_health_scores' as any)
-        .select('*, clients(name)')
-        .order('calculated_at', { ascending: false })
-        .limit(500);
-      if (error) throw error;
-
-      // Deduplicate to latest per client
+      const { data, error } = await db.query('customer_health_scores', {
+        select: '*, clients(name)',
+        order: [{ column: 'calculated_at', ascending: false }],
+        limit: 500,
+      });
+      if (error) throw new Error(error.message);
       const seen = new Map<string, CustomerHealthListItem>();
       for (const row of data as any[]) {
         if (!seen.has(row.client_id)) {

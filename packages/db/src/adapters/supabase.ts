@@ -5,6 +5,7 @@ import type {
   QueryOptions,
   UpsertOptions,
   Filter,
+  NotFilter,
   User,
   Session,
   AuthChangeEvent,
@@ -135,9 +136,15 @@ export class SupabaseAdapter implements DbAdapter {
   async query<T = Record<string, unknown>>(table: string, options?: QueryOptions) {
     let q = this.client.from(table).select(options?.select ?? "*", {
       count: options?.count ?? undefined,
+      head: options?.head ?? false,
     });
 
     if (options?.filters) q = applyFilters(q, options.filters);
+    if (options?.not) {
+      for (const n of options.not) {
+        q = q.not(n.column, n.operator, n.value as any);
+      }
+    }
     if (options?.or) q = q.or(options.or);
     if (options?.order) {
       for (const o of options.order) {
@@ -149,6 +156,11 @@ export class SupabaseAdapter implements DbAdapter {
     }
     if (options?.limit != null) q = q.limit(options.limit);
     if (options?.range) q = q.range(options.range[0], options.range[1]);
+    if (options?.single) {
+      const { data, error } = await q.single();
+      if (error) return { data: null, count: null, error: toDbError(error) } as const;
+      return { data: [data as T], count: 1, error: null } as const;
+    }
 
     const { data, count, error } = await q;
 
@@ -330,6 +342,12 @@ export class SupabaseAdapter implements DbAdapter {
     return data.publicUrl;
   }
 
+  async getSignedUrl(bucket: string, path: string, expiresIn: number): Promise<string | null> {
+    const { data, error } = await this.client.storage.from(bucket).createSignedUrl(path, expiresIn);
+    if (error) return null;
+    return data.signedUrl;
+  }
+
   async removeFiles(bucket: string, paths: string[]): Promise<void> {
     const { error } = await this.client.storage.from(bucket).remove(paths);
     if (error) throw error;
@@ -339,6 +357,16 @@ export class SupabaseAdapter implements DbAdapter {
 
   async rpc<T = unknown>(functionName: string, params?: Record<string, unknown>) {
     const { data, error } = await this.client.rpc(functionName, params as any);
+    if (error) return { data: null, error: toDbError(error) } as const;
+    return { data: data as T, error: null } as const;
+  }
+
+  // ------ Edge Functions / Invoke ------
+
+  async invoke<T = unknown>(functionName: string, body?: Record<string, unknown>) {
+    const { data, error } = await this.client.functions.invoke(functionName, {
+      body: body ?? {},
+    });
     if (error) return { data: null, error: toDbError(error) } as const;
     return { data: data as T, error: null } as const;
   }

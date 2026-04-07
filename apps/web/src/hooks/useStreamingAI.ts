@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 
 export function useStreamingAI() {
-  const supabase = useSupabase();
+  const db = useDb();
   const [content, setContent] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,22 +17,18 @@ export function useStreamingAI() {
       abortRef.current = new AbortController();
 
       try {
-        const { data, error: fnError } = await supabase.functions.invoke(
+        const { data, error: fnError } = await db.invoke(
           functionName,
-          {
-            body: { ...body, stream: true },
-          },
+          { ...body, stream: true },
         );
 
         if (fnError) throw fnError;
 
-        // If the response is already text (non-streaming fallback)
         if (typeof data === 'string') {
           setContent(data);
           return data;
         }
 
-        // If we get a JSON response instead of stream
         if (data && typeof data === 'object') {
           const text =
             data.choices?.[0]?.message?.content ||

@@ -1,40 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useNotifications() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { user } = useAuth();
   return useQuery({
     queryKey: ['notifications', user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
+      const { data, error } = await db.query('notifications', { filters: [{ column: 'user_id', operator: 'eq', value: user!.id }], order: [{ column: 'created_at', ascending: false }], limit: 50 });
+      if (error) throw new Error(error.message);
       return data;
     },
-    refetchInterval: 60000, // poll every minute
+    refetchInterval: 60000,
   });
 }
 
 export function useUnreadCount() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { user } = useAuth();
   return useQuery({
     queryKey: ['notifications_unread', user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user!.id)
-        .eq('is_read', false);
-      if (error) throw error;
+      const { count, error } = await db.query('notifications', { count: 'exact', head: true, filters: [{ column: 'user_id', operator: 'eq', value: user!.id }, { column: 'is_read', operator: 'eq', value: false }] });
+      if (error) throw new Error(error.message);
       return count || 0;
     },
     refetchInterval: 30000,
@@ -42,12 +33,12 @@ export function useUnreadCount() {
 }
 
 export function useMarkNotificationRead() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id);
-      if (error) throw error;
+      const { error } = await db.update('notifications', { id }, { is_read: true });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
@@ -57,13 +48,16 @@ export function useMarkNotificationRead() {
 }
 
 export function useMarkAllRead() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('notifications').update({ is_read: true }).eq('user_id', user!.id).eq('is_read', false);
-      if (error) throw error;
+      // Update all unread notifications for the user
+      const { data: unread } = await db.query('notifications', { select: 'id', filters: [{ column: 'user_id', operator: 'eq', value: user!.id }, { column: 'is_read', operator: 'eq', value: false }] });
+      for (const n of unread || []) {
+        await db.update('notifications', { id: n.id }, { is_read: true });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
@@ -73,12 +67,12 @@ export function useMarkAllRead() {
 }
 
 export function useDeleteNotification() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('notifications').delete().eq('id', id);
-      if (error) throw error;
+      const { error } = await db.delete('notifications', { id });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
@@ -88,13 +82,15 @@ export function useDeleteNotification() {
 }
 
 export function useClearAllNotifications() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('notifications').delete().eq('user_id', user!.id);
-      if (error) throw error;
+      const { data: all } = await db.query('notifications', { select: 'id', filters: [{ column: 'user_id', operator: 'eq', value: user!.id }] });
+      for (const n of all || []) {
+        await db.delete('notifications', { id: n.id });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });

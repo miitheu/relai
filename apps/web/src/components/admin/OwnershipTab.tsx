@@ -8,11 +8,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight, AlertTriangle } from 'lucide-react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useQuery } from '@tanstack/react-query';
 
 export default function OwnershipTab() {
-  const supabase = useSupabase();
+  const db = useDb();
   const { data: users } = useAdminUsers();
   const [fromUser, setFromUser] = useState('');
   const [toUser, setToUser] = useState('');
@@ -29,9 +29,9 @@ export default function OwnershipTab() {
     enabled: !!fromUser,
     queryFn: async () => {
       const [opps, clients, deliveries] = await Promise.all([
-        supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('owner_id', fromUser).not('stage', 'in', '("Closed Won","Closed Lost")'),
-        supabase.from('clients').select('id', { count: 'exact', head: true }).eq('owner_id', fromUser),
-        supabase.from('deliveries').select('id', { count: 'exact', head: true }).eq('owner_id', fromUser),
+        db.query('opportunities', { select: 'id', count: 'exact', head: true, filters: [{ column: 'owner_id', operator: 'eq', value: fromUser }], not: [{ column: 'stage', operator: 'in', value: '("Closed Won","Closed Lost")' }] }),
+        db.query('clients', { select: 'id', count: 'exact', head: true, filters: [{ column: 'owner_id', operator: 'eq', value: fromUser }] }),
+        db.query('deliveries', { select: 'id', count: 'exact', head: true, filters: [{ column: 'owner_id', operator: 'eq', value: fromUser }] }),
       ]);
       return {
         opportunities: opps.count || 0,

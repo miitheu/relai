@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 
 export interface AccountActionItem {
   id: string;
@@ -17,34 +17,35 @@ export interface AccountActionItem {
 }
 
 export function useAllAccountActionItems() {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['account-action-items', 'all-pending'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('account_action_items' as any)
-        .select('*, clients:client_id(name), opportunities:opportunity_id(name, owner_id)')
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+      const { data, error } = await db.query('account_action_items', {
+        select: '*, clients:client_id(name), opportunities:opportunity_id(name, owner_id)',
+        filters: [{ column: 'status', operator: 'eq', value: 'pending' }],
+        order: [{ column: 'created_at', ascending: false }],
+      });
+      if (error) throw new Error(error.message);
       return (data || []) as unknown as (AccountActionItem & { clients?: { name: string } | null; opportunities?: { name: string; owner_id: string } | null })[];
     },
   });
 }
 
 export function useAccountActionItems(clientId: string | undefined) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['account-action-items', clientId],
     queryFn: async () => {
       if (!clientId) return [];
-      const { data, error } = await supabase
-        .from('account_action_items' as any)
-        .select('*')
-        .eq('client_id', clientId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
+      const { data, error } = await db.query('account_action_items', {
+        filters: [
+          { column: 'client_id', operator: 'eq', value: clientId },
+          { column: 'status', operator: 'eq', value: 'pending' },
+        ],
+        order: [{ column: 'created_at', ascending: false }],
+      });
+      if (error) throw new Error(error.message);
       return (data || []) as unknown as AccountActionItem[];
     },
     enabled: !!clientId,
@@ -52,30 +53,19 @@ export function useAccountActionItems(clientId: string | undefined) {
 }
 
 export function useResolveActionItem() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      id,
-      resolution_note,
-      file_url,
-    }: {
-      id: string;
-      resolution_note?: string;
-      file_url?: string;
-    }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase
-        .from('account_action_items' as any)
-        .update({
-          status: 'completed',
-          resolved_at: new Date().toISOString(),
-          resolved_by: user?.id || null,
-          resolution_note: resolution_note || null,
-          file_url: file_url || null,
-        } as any)
-        .eq('id', id);
-      if (error) throw error;
+    mutationFn: async ({ id, resolution_note, file_url }: { id: string; resolution_note?: string; file_url?: string; }) => {
+      const user = await db.getCurrentUser();
+      const { error } = await db.update('account_action_items', { id }, {
+        status: 'completed',
+        resolved_at: new Date().toISOString(),
+        resolved_by: user?.id || null,
+        resolution_note: resolution_note || null,
+        file_url: file_url || null,
+      });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['account-action-items'] });
@@ -84,20 +74,17 @@ export function useResolveActionItem() {
 }
 
 export function useDismissActionItem() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase
-        .from('account_action_items' as any)
-        .update({
-          status: 'dismissed',
-          resolved_at: new Date().toISOString(),
-          resolved_by: user?.id || null,
-        } as any)
-        .eq('id', id);
-      if (error) throw error;
+      const user = await db.getCurrentUser();
+      const { error } = await db.update('account_action_items', { id }, {
+        status: 'dismissed',
+        resolved_at: new Date().toISOString(),
+        resolved_by: user?.id || null,
+      });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['account-action-items'] });
@@ -105,13 +92,11 @@ export function useDismissActionItem() {
   });
 }
 
-export async function uploadContract(file: File, opportunityId: string): Promise<string> {
+export async function uploadContract(db: ReturnType<typeof useDb>, file: File, opportunityId: string): Promise<string> {
   const ext = file.name.split('.').pop() || 'pdf';
   const path = `${opportunityId}/${Date.now()}.${ext}`;
-  const { error } = await supabase.storage
-    .from('contracts')
-    .upload(path, file, { upsert: false });
-  if (error) throw error;
-  const { data } = supabase.storage.from('contracts').getPublicUrl(path);
-  return data.publicUrl;
+  const uploadResult = await db.uploadFile!('contracts', path, file);
+  if (uploadResult && 'error' in uploadResult && uploadResult.error) throw uploadResult.error;
+  const urlResult = await db.getFileUrl!('contracts', path);
+  return (urlResult as any)?.publicUrl || path;
 }

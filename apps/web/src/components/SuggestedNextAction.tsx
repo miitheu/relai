@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { Lightbulb, RefreshCw, Copy, Check } from 'lucide-react';
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function SuggestedNextAction({ clientId, clientName, opportunities, deliveries, renewals, signals, contacts }: Props) {
-  const supabase = useSupabase();
+  const db = useDb();
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -45,12 +45,10 @@ export default function SuggestedNextAction({ clientId, clientName, opportunitie
         key_contacts: contacts.slice(0, 3).map(c => ({ name: c.name, title: c.title, influence: c.influence_level })),
       };
 
-      const { data, error } = await supabase.functions.invoke('campaign-email-draft', {
-        body: {
+      const { data, error } = await db.invoke('campaign-email-draft', {
           mode: 'suggested_action',
           context,
-        },
-      });
+        });
       if (error) throw error;
       setSuggestion(data?.suggestion || data?.draft || 'No suggestion generated.');
     } catch {

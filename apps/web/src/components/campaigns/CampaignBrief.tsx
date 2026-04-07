@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Target, Package, MapPin, Users, Globe, BarChart3, MessageSquare, Loader2, Plus, X } from 'lucide-react';
 import { useUpdateCampaign } from '@/hooks/useCampaigns';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { toast } from 'sonner';
 
 const objectiveDescriptions: Record<string, string> = {
@@ -14,7 +14,7 @@ const objectiveDescriptions: Record<string, string> = {
 };
 
 export default function CampaignBrief({ campaign, datasets }: { campaign: any; datasets: any[] }) {
-  const supabase = useSupabase();
+  const db = useDb();
   const productNames = (campaign.target_product_ids || [])
     .map((id: string) => datasets.find((d: any) => d.id === id))
     .filter(Boolean);
@@ -32,8 +32,7 @@ export default function CampaignBrief({ campaign, datasets }: { campaign: any; d
     try {
       const productContext = productNames.map((d: any) => `${d.name}: ${d.description || 'N/A'}`).join('; ');
 
-      const { data, error } = await supabase.functions.invoke('campaign-email-draft', {
-        body: {
+      const { data, error } = await db.invoke('campaign-email-draft', {
           campaign_name: campaign.name,
           campaign_focus: campaign.focus,
           campaign_description: campaign.description,
@@ -50,8 +49,7 @@ export default function CampaignBrief({ campaign, datasets }: { campaign: any; d
           supporting_companies: [],
           evidence_summary: `Geos: ${geos.join(', ') || 'Global'}`,
           generate_messaging_framework: true,
-        },
-      });
+        });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

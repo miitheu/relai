@@ -4,7 +4,7 @@ import { useEmailTemplates } from '@/hooks/useEmailTemplates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import {
   Mail, X, Loader2, Copy, Check, RefreshCw, ArrowLeft, Save, Sparkles, FileText,
 } from 'lucide-react';
@@ -29,7 +29,7 @@ function getStageColor(stage: string): string {
 }
 
 export default function OpportunityEmailDraft({ opportunity, trigger, onClose }: Props) {
-  const supabase = useSupabase();
+  const db = useDb();
   const { generate, emailDraft, variants, isLoading, error: generateError, reset, contacts } = useOpportunityEmailDraft(opportunity);
   const { data: allTemplates = [] } = useEmailTemplates();
   const { user } = useAuth();
@@ -110,7 +110,7 @@ export default function OpportunityEmailDraft({ opportunity, trigger, onClose }:
     if (!draft) return;
     if (logged) return; // Prevent duplicate logging
     try {
-      await supabase.from('emails').insert({
+      await db.insert('emails', {
         subject: draft.subject,
         summary: draft.body.slice(0, 500),
         body_text: draft.body,

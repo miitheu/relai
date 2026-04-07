@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Filter } from '@relai/db';
 
 export interface Integration {
   id: string;
@@ -25,75 +26,53 @@ export interface SyncLogEntry {
 }
 
 export function useIntegrations() {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['integrations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('integrations' as any)
-        .select('*')
-        .order('name')
-        .limit(100);
-      if (error) throw error;
+      const { data, error } = await db.query('integrations', { order: [{ column: 'name' }], limit: 100 });
+      if (error) throw new Error(error.message);
       return data as unknown as Integration[];
     },
   });
 }
 
 export function useCreateIntegration() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async (input: {
-      name: string;
-      type: string;
-      config?: Record<string, any>;
-      status?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('integrations' as any)
-        .insert({ ...input, created_by: user?.id } as any)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as unknown as Integration;
+    mutationFn: async (input: { name: string; type: string; config?: Record<string, any>; status?: string; }) => {
+      const { data, error } = await db.insert('integrations', { ...input, created_by: user?.id });
+      if (error) throw new Error(error.message);
+      return data[0] as unknown as Integration;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['integrations'] }),
   });
 }
 
 export function useUpdateIntegration() {
-  const supabase = useSupabase();
+  const db = useDb();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: { id: string; [key: string]: any }) => {
-      const { data, error } = await supabase
-        .from('integrations' as any)
-        .update(input as any)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as unknown as Integration;
+      const { data, error } = await db.update('integrations', { id }, input);
+      if (error) throw new Error(error.message);
+      return data[0] as unknown as Integration;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['integrations'] }),
   });
 }
 
 export function useSyncLog(integrationId?: string) {
-  const supabase = useSupabase();
+  const db = useDb();
   return useQuery({
     queryKey: ['sync-log', integrationId || 'all'],
     queryFn: async () => {
-      let q = supabase
-        .from('sync_log' as any)
-        .select('*')
-        .order('started_at', { ascending: false })
-        .limit(200);
-      if (integrationId) q = q.eq('integration_id', integrationId);
-      const { data, error } = await q;
-      if (error) throw error;
+      const filters: Filter[] = [];
+      if (integrationId) filters.push({ column: 'integration_id', operator: 'eq', value: integrationId });
+      const { data, error } = await db.query('sync_log', { filters, order: [{ column: 'started_at', ascending: false }], limit: 200 });
+      if (error) throw new Error(error.message);
       return data as unknown as SyncLogEntry[];
     },
   });

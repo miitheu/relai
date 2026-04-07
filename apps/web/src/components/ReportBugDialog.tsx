@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bug, X, Loader2, Send, Check } from 'lucide-react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useDb } from '@relai/db/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function ReportBugDialog({ collapsed }: Props) {
-  const supabase = useSupabase();
+  const db = useDb();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -33,9 +33,7 @@ export default function ReportBugDialog({ collapsed }: Props) {
         `**User Agent:** ${navigator.userAgent}`,
       ].join('\n');
 
-      const { data, error } = await supabase.functions.invoke('report-bug', {
-        body: { title: title.trim(), body },
-      });
+      const { data, error } = await db.invoke('report-bug', { title: title.trim(), body });
       if (error) throw error;
 
       setSubmitted(true);

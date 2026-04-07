@@ -13,6 +13,7 @@ export type {
   UpsertOptions,
   Filter,
   FilterOperator,
+  NotFilter,
   OrderBy,
   User,
   Session,
