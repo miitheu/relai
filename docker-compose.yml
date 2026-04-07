@@ -4,9 +4,10 @@ services:
     environment:
       POSTGRES_DB: relai
       POSTGRES_USER: relai
-      POSTGRES_PASSWORD: relai_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-relai_dev_only_change_me}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # Only expose DB port in development — remove in production
     ports:
       - "5432:5432"
     healthcheck:
@@ -20,10 +21,10 @@ services:
       context: .
       target: api
     environment:
-      DATABASE_URL: postgres://relai:relai_password@db:5432/relai
-      AUTH_SECRET: relai-dev-secret-change-in-production
+      DATABASE_URL: postgres://relai:${POSTGRES_PASSWORD:-relai_dev_only_change_me}@db:5432/relai
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required — generate with: openssl rand -hex 32}
       API_PORT: "3001"
-      CORS_ORIGIN: http://localhost:3000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       STORAGE_DIR: /app/uploads
     ports:
       - "3001:3001"
@@ -39,7 +40,7 @@ services:
       target: web
       args:
         VITE_CRM_MODE: self-hosted
-        VITE_API_URL: http://localhost:3001
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
     ports:
       - "3000:3000"
     depends_on:

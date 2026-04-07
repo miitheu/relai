@@ -1,6 +1,13 @@
 import * as jose from "jose";
 
-const AUTH_SECRET = process.env.AUTH_SECRET || "relai-dev-secret-change-me";
+const AUTH_SECRET = process.env.AUTH_SECRET;
+if (!AUTH_SECRET || AUTH_SECRET.length < 32) {
+  throw new Error(
+    "AUTH_SECRET environment variable is required and must be at least 32 characters. " +
+    "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
+  );
+}
+
 const secret = new TextEncoder().encode(AUTH_SECRET);
 
 const ACCESS_TOKEN_EXPIRY = "1h";
