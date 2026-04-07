@@ -10,14 +10,21 @@ import type {
   UploadResult,
 } from "../types";
 
-const TOKEN_KEY = "relai_access_token";
-const REFRESH_KEY = "relai_refresh_token";
-
 type AuthCallback = (event: AuthChangeEvent, session: Session | null) => void;
 
+/**
+ * HttpAdapter — browser-side adapter for self-hosted mode.
+ *
+ * Auth tokens are stored in httpOnly cookies set by the API server.
+ * The adapter sends `credentials: 'include'` on every request so
+ * cookies are attached automatically. No tokens are ever accessible
+ * to JavaScript — XSS cannot steal them.
+ */
 export class HttpAdapter implements DbAdapter {
   private baseUrl: string;
   private listeners: Set<AuthCallback> = new Set();
+  private _cachedUser: User | null = null;
+  private _authenticated = false;
 
   capabilities = {
     realtime: false,
@@ -29,44 +36,28 @@ export class HttpAdapter implements DbAdapter {
     this.baseUrl = apiUrl.replace(/\/$/, "");
   }
 
-  private get token(): string | null {
-    if (typeof localStorage === "undefined") return null;
-    return localStorage.getItem(TOKEN_KEY);
-  }
-
-  private setTokens(access: string, refresh: string) {
-    localStorage.setItem(TOKEN_KEY, access);
-    localStorage.setItem(REFRESH_KEY, refresh);
-  }
-
-  private clearTokens() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
-  }
-
   private async post<T>(path: string, body: unknown): Promise<T> {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (this.token) headers["Authorization"] = `Bearer ${this.token}`;
-
     const res = await fetch(`${this.baseUrl}${path}`, {
       method: "POST",
-      headers,
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(body),
     });
 
-    if (res.status === 401 && this.token) {
-      // Try refresh
+    if (res.status === 401 && this._authenticated) {
+      // Access token expired — try refresh (cookie-based)
       const refreshed = await this.tryRefresh();
       if (refreshed) {
-        headers["Authorization"] = `Bearer ${this.token}`;
         const retry = await fetch(`${this.baseUrl}${path}`, {
           method: "POST",
-          headers,
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify(body),
         });
         return retry.json();
       }
-      this.clearTokens();
+      this._authenticated = false;
+      this._cachedUser = null;
       this.notifyListeners("SIGNED_OUT", null);
     }
 
@@ -74,26 +65,28 @@ export class HttpAdapter implements DbAdapter {
   }
 
   private async get<T>(path: string): Promise<T> {
-    const headers: Record<string, string> = {};
-    if (this.token) headers["Authorization"] = `Bearer ${this.token}`;
-
-    const res = await fetch(`${this.baseUrl}${path}`, { headers });
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      credentials: "include",
+    });
     return res.json();
   }
 
   private async tryRefresh(): Promise<boolean> {
-    const refreshToken = localStorage.getItem(REFRESH_KEY);
-    if (!refreshToken) return false;
-
     try {
       const res = await fetch(`${this.baseUrl}/api/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken }),
+        credentials: "include",
+        body: "{}",
       });
       const data = await res.json();
-      if (data.session) {
-        this.setTokens(data.session.access_token, data.session.refresh_token);
+      if (data.user && !data.error) {
+        this._cachedUser = {
+          id: data.user.id,
+          email: data.user.email,
+          created_at: data.user.created_at,
+          user_metadata: data.user.raw_user_meta_data,
+        };
         return true;
       }
     } catch { /* ignore */ }
@@ -106,12 +99,12 @@ export class HttpAdapter implements DbAdapter {
     }
   }
 
-  private mapSession(data: any): Session | null {
-    if (!data?.session) return null;
+  private buildSession(data: any): Session | null {
+    if (!data?.user) return null;
     return {
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      expires_at: data.session.expires_at,
+      access_token: "httponly-cookie",
+      refresh_token: "httponly-cookie",
+      expires_at: data.session?.expires_at,
       user: {
         id: data.user.id,
         email: data.user.email,
@@ -153,25 +146,42 @@ export class HttpAdapter implements DbAdapter {
   // ------ Auth ------
 
   async getCurrentUser(): Promise<User | null> {
-    if (!this.token) return null;
+    if (!this._authenticated) return null;
+    if (this._cachedUser) return this._cachedUser;
+
     const result = await this.get<any>("/api/auth/me");
     if (!result.user) return null;
-    return {
+    this._cachedUser = {
       id: result.user.id,
       email: result.user.email,
       created_at: result.user.created_at,
       user_metadata: result.user.raw_user_meta_data,
     };
+    return this._cachedUser;
   }
 
   async getSession(): Promise<Session | null> {
-    if (!this.token) return null;
-    const user = await this.getCurrentUser();
-    if (!user) return null;
+    // Check if we have a valid session by hitting /me
+    const result = await this.get<any>("/api/auth/me");
+    if (!result.user) {
+      // Try refresh
+      const refreshed = await this.tryRefresh();
+      if (!refreshed) return null;
+      return this.getSession();
+    }
+
+    this._authenticated = true;
+    this._cachedUser = {
+      id: result.user.id,
+      email: result.user.email,
+      created_at: result.user.created_at,
+      user_metadata: result.user.raw_user_meta_data,
+    };
+
     return {
-      access_token: this.token!,
-      refresh_token: localStorage.getItem(REFRESH_KEY) ?? undefined,
-      user,
+      access_token: "httponly-cookie",
+      refresh_token: "httponly-cookie",
+      user: this._cachedUser,
     };
   }
 
@@ -179,8 +189,9 @@ export class HttpAdapter implements DbAdapter {
     const result = await this.post<any>("/api/auth/signin", { email, password });
     if (result.error) return { user: null, session: null, error: result.error as DbError };
 
-    this.setTokens(result.session.access_token, result.session.refresh_token);
-    const session = this.mapSession(result)!;
+    this._authenticated = true;
+    const session = this.buildSession(result)!;
+    this._cachedUser = session.user;
     this.notifyListeners("SIGNED_IN", session);
     return { user: session.user, session, error: null };
   }
@@ -189,18 +200,17 @@ export class HttpAdapter implements DbAdapter {
     const result = await this.post<any>("/api/auth/signup", { email, password, metadata });
     if (result.error) return { user: null, session: null, error: result.error as DbError };
 
-    this.setTokens(result.session.access_token, result.session.refresh_token);
-    const session = this.mapSession(result)!;
+    this._authenticated = true;
+    const session = this.buildSession(result)!;
+    this._cachedUser = session.user;
     this.notifyListeners("SIGNED_IN", session);
     return { user: session.user, session, error: null };
   }
 
   async signOut() {
-    const refreshToken = localStorage.getItem(REFRESH_KEY);
-    if (refreshToken) {
-      await this.post("/api/auth/signout", { refresh_token: refreshToken }).catch(() => {});
-    }
-    this.clearTokens();
+    await this.post("/api/auth/signout", {}).catch(() => {});
+    this._authenticated = false;
+    this._cachedUser = null;
     this.notifyListeners("SIGNED_OUT", null);
     return { error: null };
   }
@@ -208,15 +218,14 @@ export class HttpAdapter implements DbAdapter {
   async updateUser(attributes: { password?: string; email?: string; data?: Record<string, unknown> }) {
     const result = await this.post<any>("/api/auth/update", attributes);
     if (result.error) return { user: null, error: result.error as DbError };
-    return {
-      user: {
-        id: result.user.id,
-        email: result.user.email,
-        created_at: result.user.created_at,
-        user_metadata: result.user.raw_user_meta_data,
-      },
-      error: null,
+    const user: User = {
+      id: result.user.id,
+      email: result.user.email,
+      created_at: result.user.created_at,
+      user_metadata: result.user.raw_user_meta_data,
     };
+    this._cachedUser = user;
+    return { user, error: null };
   }
 
   onAuthStateChange(callback: (event: AuthChangeEvent, session: Session | null) => void): Subscription {
@@ -225,8 +234,12 @@ export class HttpAdapter implements DbAdapter {
     // Fire initial session check
     setTimeout(async () => {
       const session = await this.getSession();
-      if (session) callback("INITIAL_SESSION", session);
-      else callback("INITIAL_SESSION", null);
+      if (session) {
+        this._authenticated = true;
+        callback("INITIAL_SESSION", session);
+      } else {
+        callback("INITIAL_SESSION", null);
+      }
     }, 0);
 
     return {
@@ -238,18 +251,15 @@ export class HttpAdapter implements DbAdapter {
 
   // ------ Storage ------
 
-  async uploadFile(bucket: string, path: string, file: File): Promise<UploadResult> {
+  async uploadFile(bucket: string, filePath: string, file: File): Promise<UploadResult> {
     const formData = new FormData();
     formData.append("bucket", bucket);
-    formData.append("path", path);
+    formData.append("path", filePath);
     formData.append("file", file);
-
-    const headers: Record<string, string> = {};
-    if (this.token) headers["Authorization"] = `Bearer ${this.token}`;
 
     const res = await fetch(`${this.baseUrl}/api/storage/upload`, {
       method: "POST",
-      headers,
+      credentials: "include",
       body: formData,
     });
     const result = await res.json();
@@ -257,13 +267,13 @@ export class HttpAdapter implements DbAdapter {
     return { path: result.data.path };
   }
 
-  getFileUrl(bucket: string, path: string): string {
-    return `${this.baseUrl}/api/storage/serve/${bucket}/${path}`;
+  getFileUrl(bucket: string, filePath: string): string {
+    return `${this.baseUrl}/api/storage/serve/${bucket}/${filePath}`;
   }
 
-  async getSignedUrl(bucket: string, path: string, expiresIn: number): Promise<string | null> {
+  async getSignedUrl(bucket: string, filePath: string, expiresIn: number): Promise<string | null> {
     const result = await this.get<any>(
-      `/api/storage/signed-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}&expiresIn=${expiresIn}`
+      `/api/storage/signed-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(filePath)}&expiresIn=${expiresIn}`
     );
     return result.url ?? null;
   }

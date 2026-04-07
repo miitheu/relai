@@ -1,12 +1,38 @@
 import { Hono } from "hono";
+import { setCookie, deleteCookie, getCookie } from "hono/cookie";
 import { createUser, authenticateUser, refreshSession, revokeSession, getUserById, updateUserPassword } from "../auth/users";
 
 const auth = new Hono();
 
+const IS_PROD = process.env.NODE_ENV === "production";
+const COOKIE_OPTS = {
+  httpOnly: true,
+  secure: IS_PROD,
+  sameSite: IS_PROD ? "Strict" as const : "Lax" as const,
+  path: "/",
+};
+
+function setAuthCookies(c: any, accessToken: string, refreshToken: string) {
+  setCookie(c, "relai_access_token", accessToken, {
+    ...COOKIE_OPTS,
+    maxAge: 3600, // 1 hour
+  });
+  setCookie(c, "relai_refresh_token", refreshToken, {
+    ...COOKIE_OPTS,
+    maxAge: 30 * 24 * 3600, // 30 days
+    path: "/api/auth", // only sent to auth endpoints
+  });
+}
+
+function clearAuthCookies(c: any) {
+  deleteCookie(c, "relai_access_token", { path: "/" });
+  deleteCookie(c, "relai_refresh_token", { path: "/api/auth" });
+}
+
 // Simple in-memory rate limiter
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const RATE_LIMIT_MAX = 10; // max attempts per window
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000;
+const RATE_LIMIT_MAX = 10;
 
 function checkRateLimit(key: string): boolean {
   const now = Date.now();
@@ -20,7 +46,6 @@ function checkRateLimit(key: string): boolean {
   return true;
 }
 
-// Cleanup old entries periodically
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of loginAttempts) {
@@ -40,18 +65,23 @@ auth.post("/signin", async (c) => {
     return c.json({ user: null, session: null, error: { message: "Invalid password" } }, 400);
   }
 
-  // Rate limit by email
   if (!checkRateLimit(email.toLowerCase())) {
     return c.json({ user: null, session: null, error: { message: "Too many login attempts. Try again later." } }, 429);
   }
 
   const result = await authenticateUser(email, password);
   if (!result) {
-    // Generic message — don't reveal whether email exists
     return c.json({ user: null, session: null, error: { message: "Invalid credentials" } });
   }
 
-  return c.json({ ...result, error: null });
+  setAuthCookies(c, result.session.access_token, result.session.refresh_token);
+
+  // Return user info but NOT the tokens in the body (they're in cookies now)
+  return c.json({
+    user: result.user,
+    session: { expires_at: result.session.expires_at },
+    error: null,
+  });
 });
 
 auth.post("/signup", async (c) => {
@@ -72,33 +102,48 @@ auth.post("/signup", async (c) => {
 
   try {
     const result = await createUser(email, password, metadata ?? {});
-    return c.json({ ...result, error: null });
+    setAuthCookies(c, result.session.access_token, result.session.refresh_token);
+
+    return c.json({
+      user: result.user,
+      session: { expires_at: result.session.expires_at },
+      error: null,
+    });
   } catch (err: any) {
-    // Generic message — don't reveal whether email exists
     return c.json({ user: null, session: null, error: { message: "Unable to create account" } });
   }
 });
 
 auth.post("/signout", async (c) => {
-  const { refresh_token } = await c.req.json();
-  if (refresh_token && typeof refresh_token === "string") {
-    await revokeSession(refresh_token);
+  // Read refresh token from cookie (preferred) or body (fallback)
+  const refreshToken = getCookie(c, "relai_refresh_token") || (await c.req.json().catch(() => ({}))).refresh_token;
+  if (refreshToken && typeof refreshToken === "string") {
+    await revokeSession(refreshToken);
   }
+  clearAuthCookies(c);
   return c.json({ error: null });
 });
 
 auth.post("/refresh", async (c) => {
-  const { refresh_token } = await c.req.json();
-  if (!refresh_token || typeof refresh_token !== "string") {
+  // Read refresh token from cookie (preferred) or body (fallback)
+  const refreshToken = getCookie(c, "relai_refresh_token") || (await c.req.json().catch(() => ({}))).refresh_token;
+  if (!refreshToken || typeof refreshToken !== "string") {
     return c.json({ user: null, session: null, error: { message: "Refresh token required" } }, 400);
   }
 
-  const result = await refreshSession(refresh_token);
+  const result = await refreshSession(refreshToken);
   if (!result) {
+    clearAuthCookies(c);
     return c.json({ user: null, session: null, error: { message: "Invalid or expired session" } }, 401);
   }
 
-  return c.json({ ...result, error: null });
+  setAuthCookies(c, result.session.access_token, result.session.refresh_token);
+
+  return c.json({
+    user: result.user,
+    session: { expires_at: result.session.expires_at },
+    error: null,
+  });
 });
 
 auth.get("/me", async (c) => {
