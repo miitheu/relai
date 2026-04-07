@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { sql } from "../db";
 import type { QueryOptions, Filter, NotFilter, OrderBy } from "@relai/db";
+import { buildJoinQuery } from "../joins";
+import { parseOrFilter } from "../filters";
 
 const query = new Hono();
 
@@ -155,10 +157,15 @@ function buildWhere(
     }
   }
 
-  // OR filter: reject for now — needs a proper safe parser
-  // The Supabase PostgREST format (col.op.val,col2.op.val2) is complex
-  // and accepting raw strings is a SQL injection vector.
-  // Hooks that use .or() will need to be reworked to use explicit filters.
+  // OR filter — parsed safely via parseOrFilter
+  if (or) {
+    const orResult = parseOrFilter(or, paramIdx);
+    if (orResult) {
+      conditions.push(orResult.clause);
+      values.push(...orResult.values);
+      paramIdx += orResult.values.length;
+    }
+  }
 
   const clause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
   return { clause, values };
@@ -216,7 +223,6 @@ query.post("/query", async (c) => {
   }
 
   try {
-    const selectCols = safeSelect(options?.select ?? "*");
     const { clause, values } = buildWhere(options?.filters, options?.not, options?.or, userId);
     const orderBy = buildOrderBy(options?.order);
 
@@ -242,10 +248,19 @@ query.post("/query", async (c) => {
       return c.json({ data: [], count: countResult[0]?.total ?? 0, error: null });
     }
 
-    const data = await sql.unsafe(
-      `SELECT ${selectCols} FROM "${table}" ${clause} ${orderBy} ${limitClause} ${offsetClause}`,
-      values
+    // Build query with join support — parses Supabase-style select strings
+    const selectStr = options?.select ?? "*";
+    const { sql: querySql, values: queryValues } = buildJoinQuery(
+      table,
+      selectStr,
+      clause,
+      values,
+      orderBy,
+      limitClause,
+      offsetClause,
     );
+
+    const data = await sql.unsafe(querySql, queryValues);
 
     let count = null;
     if (options?.count === "exact") {
