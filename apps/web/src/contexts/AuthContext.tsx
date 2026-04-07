@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useDb } from '@relai/db/react';
-import type { Session, User, DbAdapter } from '@relai/db';
+import type { Session, User } from '@relai/db';
 
 type AppRole = 'admin' | 'sales_manager' | 'sales_rep' | 'viewer';
 
@@ -11,6 +11,7 @@ interface Profile {
   full_name: string;
   team: string | null;
   is_active: boolean;
+  org_id: string | null;
 }
 
 interface AuthContextType {
@@ -18,10 +19,13 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   role: AppRole | null;
+  orgId: string | null;
   loading: boolean;
+  needsSetup: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, orgId?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -32,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -45,8 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       filters: [{ column: 'user_id', operator: 'eq', value: userId }],
     });
 
-    if (profileResult.data) setProfile(profileResult.data);
+    if (profileResult.data) {
+      setProfile(profileResult.data);
+      setOrgId(profileResult.data.org_id);
+    }
     if (roleResult.data) setRole(roleResult.data.role);
+  };
+
+  const refreshProfile = async () => {
+    if (user) await fetchProfile(user.id);
   };
 
   useEffect(() => {
@@ -59,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setRole(null);
+          setOrgId(null);
         }
         setLoading(false);
       }
@@ -81,8 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: result.error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const result = await db.signUp(email, password, { full_name: fullName });
+  const signUp = async (email: string, password: string, fullName: string, signupOrgId?: string) => {
+    const metadata: Record<string, unknown> = { full_name: fullName };
+    if (signupOrgId) metadata.org_id = signupOrgId;
+    const result = await db.signUp(email, password, metadata);
     return { error: result.error };
   };
 
@@ -90,10 +105,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await db.signOut();
     setProfile(null);
     setRole(null);
+    setOrgId(null);
   };
 
+  const needsSetup = !loading && !!user && !orgId;
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, role, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{
+      session, user, profile, role, orgId, loading, needsSetup,
+      signIn, signUp, signOut, refreshProfile,
+    }}>
       {children}
     </AuthContext.Provider>
   );

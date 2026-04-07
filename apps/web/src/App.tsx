@@ -41,6 +41,7 @@ import QuickCreateTrial from "./components/QuickCreateTrial";
 import QuickCreateDelivery from "./components/QuickCreateDelivery";
 import CommandPalette from "./components/CommandPalette";
 import InteractionLogger from "./components/InteractionLogger";
+import SetupWizard from "./pages/setup/SetupWizard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,6 +80,7 @@ const App = () => (
               <InteractionLogger />
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/setup" element={<ProtectedRoute><SetupWizard /></ProtectedRoute>} />
                 <Route path="/auth/gmail/callback" element={<ProtectedRoute><GmailCallback /></ProtectedRoute>} />
                 <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/clients" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
