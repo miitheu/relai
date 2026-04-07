@@ -231,8 +231,7 @@ export interface HostedConfig {
 
 export interface SelfHostedConfig {
   mode: "self-hosted";
-  connectionString: string;
-  authSecret: string;
+  apiUrl: string;
 }
 
 export type DbConfig = HostedConfig | SelfHostedConfig;

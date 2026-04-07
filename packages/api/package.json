@@ -1,0 +1,24 @@
+{
+  "name": "@relai/api",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@relai/db": "workspace:*",
+    "hono": "^4.7.0",
+    "@hono/node-server": "^1.14.0",
+    "postgres": "^3.4.5",
+    "bcryptjs": "^2.4.3",
+    "jose": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}

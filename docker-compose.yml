@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: relai
+      POSTGRES_USER: relai
+      POSTGRES_PASSWORD: relai_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U relai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      DATABASE_URL: postgres://relai:relai_password@db:5432/relai
+      AUTH_SECRET: relai-dev-secret-change-in-production
+      API_PORT: "3001"
+      CORS_ORIGIN: http://localhost:3000
+      STORAGE_DIR: /app/uploads
+    ports:
+      - "3001:3001"
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        VITE_CRM_MODE: self-hosted
+        VITE_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  uploads:

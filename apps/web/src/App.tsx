@@ -53,13 +53,20 @@ const queryClient = new QueryClient({
   },
 });
 
-const dbConfig: DbConfig = {
-  mode: "hosted",
-  supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-  supabaseAnonKey:
-    import.meta.env.VITE_SUPABASE_ANON_KEY ??
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-};
+const crmMode = (import.meta.env.VITE_CRM_MODE || "hosted") as "hosted" | "self-hosted";
+
+const dbConfig: DbConfig = crmMode === "self-hosted"
+  ? {
+      mode: "self-hosted",
+      apiUrl: import.meta.env.VITE_API_URL || "http://localhost:3001",
+    }
+  : {
+      mode: "hosted",
+      supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+      supabaseAnonKey:
+        import.meta.env.VITE_SUPABASE_ANON_KEY ??
+        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    };
 
 const App = () => (
   <ErrorBoundary>

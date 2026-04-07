@@ -25,11 +25,11 @@ export type {
 } from "./types";
 
 export { SupabaseAdapter } from "./adapters/supabase";
-export { PostgresAdapter } from "./adapters/postgres";
+export { HttpAdapter } from "./adapters/http";
 
 import type { DbAdapter, DbConfig } from "./types";
 import { SupabaseAdapter } from "./adapters/supabase";
-import { PostgresAdapter } from "./adapters/postgres";
+import { HttpAdapter } from "./adapters/http";
 
 // ---------------------------------------------------------------------------
 // Factory
@@ -40,7 +40,7 @@ export function createDbAdapter(config: DbConfig): DbAdapter {
     case "hosted":
       return new SupabaseAdapter(config.supabaseUrl, config.supabaseAnonKey);
     case "self-hosted":
-      return new PostgresAdapter(config.connectionString, config.authSecret);
+      return new HttpAdapter(config.apiUrl);
     default:
       throw new Error(`Unknown CRM_MODE: ${(config as any).mode}`);
   }
