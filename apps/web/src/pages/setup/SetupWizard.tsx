@@ -4,19 +4,21 @@ import { useAuth } from '@/contexts/AuthContext';
 import ChooseMode from './ChooseMode';
 import CloudSetup from './CloudSetup';
 import DatabaseSetup from './DatabaseSetup';
+import AISetup from './AISetup';
 import ImportData from './ImportData';
 
-type Step = 'mode' | 'cloud' | 'database' | 'import' | 'done';
+type Step = 'mode' | 'cloud' | 'database' | 'ai' | 'import' | 'done';
 
 const stepLabels: Record<Step, string> = {
   mode: 'Choose Mode',
   cloud: 'Create Organization',
-  database: 'Connect Database',
+  database: 'Connect to API',
+  ai: 'Connect AI',
   import: 'Import Data',
   done: 'Done',
 };
 
-const stepOrder: Step[] = ['mode', 'cloud', 'import', 'done'];
+const stepOrder: Step[] = ['mode', 'cloud', 'ai', 'import', 'done'];
 
 export default function SetupWizard() {
   const [step, setStep] = useState<Step>('mode');
@@ -24,7 +26,7 @@ export default function SetupWizard() {
   const navigate = useNavigate();
 
   const currentIdx = stepOrder.indexOf(step);
-  const progress = Math.round(((currentIdx + 1) / stepOrder.length) * 100);
+  const progress = Math.round(((Math.max(currentIdx, 0) + 1) / stepOrder.length) * 100);
 
   const handleDone = () => {
     navigate('/', { replace: true });
@@ -57,14 +59,22 @@ export default function SetupWizard() {
 
         {step === 'cloud' && (
           <CloudSetup
-            onComplete={() => setStep('import')}
+            onComplete={() => setStep('ai')}
             onBack={() => setStep('mode')}
           />
         )}
 
         {step === 'database' && (
           <DatabaseSetup
+            onComplete={() => setStep('ai')}
             onBack={() => setStep('mode')}
+          />
+        )}
+
+        {step === 'ai' && (
+          <AISetup
+            onComplete={() => setStep('import')}
+            onSkip={() => setStep('import')}
           />
         )}
 

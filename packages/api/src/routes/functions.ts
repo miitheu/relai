@@ -19,6 +19,7 @@ import autoEnrich from "../functions/auto-enrich";
 import { gmailAuth, gmailSync } from "../functions/gmail";
 import { resolveEntity, batchResolveEntities } from "../functions/entity-resolution";
 import { secImportAccounts, secFreshnessCheck } from "../functions/sec-import";
+import aiTest from "../functions/ai-test";
 
 type FunctionHandler = (ctx: FunctionContext) => Promise<{ data: any; error?: any } | { data: null; error: any }>;
 
@@ -42,6 +43,7 @@ const FUNCTION_HANDLERS: Record<string, FunctionHandler> = {
   "batch-resolve-entities": batchResolveEntities,
   "sec-import-accounts": secImportAccounts,
   "sec-freshness-check": secFreshnessCheck,
+  "ai-test": aiTest,
 };
 
 const functions = new Hono();
