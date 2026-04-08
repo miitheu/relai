@@ -14,6 +14,11 @@ CREATE TABLE IF NOT EXISTS contracts (
   created_at timestamptz DEFAULT now()
 );
 
+-- Add opportunity_id if it doesn't exist (table may have been created in an earlier migration)
+DO $$ BEGIN
+  ALTER TABLE contracts ADD COLUMN opportunity_id uuid REFERENCES opportunities(id) ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+
 CREATE INDEX IF NOT EXISTS idx_contracts_client ON contracts(client_id);
 CREATE INDEX IF NOT EXISTS idx_contracts_opportunity ON contracts(opportunity_id);
 
